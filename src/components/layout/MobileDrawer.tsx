@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useUIStore } from '@/store/ui'
 import { CITIES } from '@/data'
 import I from '@/components/ui/icons'
@@ -21,7 +22,7 @@ export function MobileDrawer() {
       <div className={'drawer' + (open ? ' is-open' : '')}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <div className="header__brand">
-            <img src="/logo.png" alt="" style={{ width: 30, height: 30, borderRadius: 8 }}/>
+            <Image src="/logo.png" alt="Inside Thailand" width={30} height={30} style={{ borderRadius: 8 }}/>
             <span>Inside Thailand</span>
           </div>
           <button className="btn btn-sq btn-ghost" onClick={onClose} aria-label="Close"><I.x size={20}/></button>

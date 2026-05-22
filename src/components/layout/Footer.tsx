@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export function Footer() {
   return (
@@ -6,7 +7,7 @@ export function Footer() {
       <div className="wrap" style={{ display: 'grid', gap: 32, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
         <div>
           <div className="header__brand" style={{ color: 'var(--text-on-deep)', marginBottom: 12 }}>
-            <img src="/logo.png" alt="" style={{ width: 32, height: 32, borderRadius: 9 }}/>
+            <Image src="/logo.png" alt="Inside Thailand" width={32} height={32} style={{ borderRadius: 9 }}/>
             <span>Inside Thailand</span>
           </div>
           <p style={{ fontSize: 13, color: 'rgba(245,238,220,.6)', maxWidth: 280, lineHeight: 1.5 }}>

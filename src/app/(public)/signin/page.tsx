@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useUIStore } from '@/store/ui'
 
@@ -17,7 +18,7 @@ export default function SignInPage() {
     <main className="wrap route-mount" style={{ padding: '40px var(--gutter)', maxWidth: 460 }}>
       <div className="card" style={{ padding: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-          <img src="/logo.png" alt="" style={{ width: 32, height: 32, borderRadius: 9 }}/>
+          <Image src="/logo.png" alt="Inside Thailand" width={32} height={32} style={{ borderRadius: 9 }}/>
           <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17 }}>Inside Thailand</span>
         </div>
         <h1 className="h2" style={{ margin: '8px 0 4px' }}>Welcome back</h1>

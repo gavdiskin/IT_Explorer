@@ -15,6 +15,20 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   const city = useUIStore(s => s.city)
   const [sortBy, setSortBy] = useState('rating')
 
+  const Ic = cat ? (I[cat.icon] || I.dot) : I.dot
+  const places = useMemo(
+    () => (cat ? PLACES.filter(p => (!p.optional || showCannabis) && p.category === cat.id) : []),
+    [cat, showCannabis]
+  )
+
+  const sorted = useMemo(() => {
+    const r = [...places]
+    if (sortBy === 'rating') r.sort((a, b) => b.rating - a.rating)
+    if (sortBy === 'price-asc') r.sort((a, b) => a.price - b.price)
+    if (sortBy === 'reviews') r.sort((a, b) => (b.reviews ?? 0) - (a.reviews ?? 0))
+    return r
+  }, [places, sortBy])
+
   if (!cat) {
     return (
       <main className="wrap route-mount" style={{ padding: '80px 0', textAlign: 'center' }}>
@@ -24,17 +38,6 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       </main>
     )
   }
-
-  const Ic = I[cat.icon] || I.dot
-  const places = PLACES.filter(p => (!p.optional || showCannabis) && p.category === cat.id)
-
-  const sorted = useMemo(() => {
-    const r = [...places]
-    if (sortBy === 'rating') r.sort((a, b) => b.rating - a.rating)
-    if (sortBy === 'price-asc') r.sort((a, b) => a.price - b.price)
-    if (sortBy === 'reviews') r.sort((a, b) => (b.reviews ?? 0) - (a.reviews ?? 0))
-    return r
-  }, [places, sortBy])
 
   return (
     <main className="route-mount">

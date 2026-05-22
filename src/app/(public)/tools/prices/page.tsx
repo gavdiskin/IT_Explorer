@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { PRICE_DATA } from '@/data'
 import { SectionHead } from '@/components/ui/SectionHead'
 import I from '@/components/ui/icons'

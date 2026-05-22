@@ -11,7 +11,6 @@ import I from '@/components/ui/icons'
 export default function AccountPage() {
   const signedIn = useUIStore(s => s.signedIn)
   const signOut = useUIStore(s => s.signOut)
-  const savedSet = useUIStore(s => s.savedSet)
 
   if (!signedIn) {
     return (

@@ -11,7 +11,6 @@ import { PriceMark } from '@/components/ui/PriceMark'
 import { StarRating } from '@/components/ui/StarRating'
 import { GMap } from '@/components/map/GMap'
 import I from '@/components/ui/icons'
-import type { Place } from '@/types'
 
 export default function MapPage() {
   return (

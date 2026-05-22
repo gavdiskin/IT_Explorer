@@ -2,14 +2,12 @@
 
 import { useState, Fragment } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useUIStore } from '@/store/ui'
 import { CATEGORIES, CITIES } from '@/data'
 import I from '@/components/ui/icons'
 
 export default function SubmitPage() {
   const signedIn = useUIStore(s => s.signedIn)
-  const router = useRouter()
   const [step, setStep] = useState(1)
   const [submitted, setSubmitted] = useState(false)
   const [form, setForm] = useState({ name: '', category: '', area: '', city: 'bangkok', desc: '' })

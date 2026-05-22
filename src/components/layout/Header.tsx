@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useUIStore } from '@/store/ui'
 import { CITIES } from '@/data'
@@ -22,7 +23,7 @@ export function Header() {
     <header className="header">
       <div className="wrap header__inner">
         <Link href="/" className="header__brand">
-          <img src="/logo.png" alt=""/>
+          <Image src="/logo.png" alt="Inside Thailand" width={32} height={32} style={{ borderRadius: 9 }}/>
           <span>Inside Thailand</span>
         </Link>
 
