@@ -937,14 +937,127 @@ export const PRICE_DATA: PriceBenchmark[] = [
 ]
 
 export const GUIDES: Guide[] = [
-  { id: 'airport',  title: 'Airport → Bangkok center',           mins: 6,  area: 'Transport',  body: 'Airport Rail Link from Suvarnabhumi to Phaya Thai is ฿45 and 26 minutes. Taxi via the meter line (ground floor, exit 4 or 7) runs ฿250–400 + ฿70 expressway. Avoid drivers in the arrivals hall.' },
-  { id: 'visa',     title: 'Renew a 30/60-day tourist visa',     mins: 8,  area: 'Paperwork',  body: 'Extension at Chaeng Wattana immigration. Bring passport + 2 photos + TM.7 form + ฿1,900 cash + accommodation proof. Go before 9am or expect 4 hours.' },
-  { id: 'sim',      title: 'Get a SIM card',                     mins: 4,  area: 'Setup',      body: 'AIS, dtac, TrueMove H sell tourist SIMs at the airport. ฿299 = 8 days unlimited. Bring passport.' },
-  { id: 'bank',     title: 'Open a Thai bank account',           mins: 12, area: 'Long stay',  body: 'Need a non-tourist visa. Bangkok Bank Silom branch is foreigner-friendly. Bring all originals, all copies.' },
-  { id: 'apps',     title: 'Transport apps that actually work',  mins: 5,  area: 'Setup',      body: 'Bolt usually cheaper than Grab. inDrive for negotiating. Line Man for food. Maps.me offline for islands.' },
-  { id: 'mistakes', title: 'Common tourist mistakes',            mins: 6,  area: 'Streetwise', body: "Don't take tuk-tuks from the Grand Palace. Verify temples are actually open. Don't hand passport to scooter rentals." },
-  { id: 'rains',    title: "When it's rainy season",             mins: 4,  area: 'Climate',    body: 'May–Oct is wet season. Rains usually in late afternoon and clear within an hour. Plan indoor lunch, outdoor evening.' },
-  { id: 'money',    title: 'Cash, cards, ATMs',                  mins: 5,  area: 'Money',      body: 'Most ATMs charge ฿220 foreign fee — except AEON (free). Markets, taxis, tuk-tuks: cash. Malls and chains take card.' },
+  {
+    id: 'airport', title: 'Airport → Bangkok center', mins: 6, area: 'Transport',
+    body: 'Airport Rail Link from Suvarnabhumi to Phaya Thai is ฿45 and 26 minutes. Taxi via the meter line (ground floor, exit 4 or 7) runs ฿250–400 + ฿70 expressway. Avoid drivers in the arrivals hall.',
+    steps: [
+      { title: 'Take the Airport Rail Link', detail: 'Follow signs from arrivals to the basement. City Line to Phaya Thai is ฿45 and runs every 15 minutes. Journey: 26 min. Change to BTS at Phaya Thai.' },
+      { title: 'Or join the official taxi queue', detail: 'Ground floor, exit 4 or 7. Join the queue machine — it prints your taxi number. Insist on the meter. Add ฿50–70 expressway toll (you pay at the booth).' },
+      { title: 'Agree on nothing in the arrivals hall', detail: 'Anyone approaching you inside with "private taxi" offers inflated fixed rates of ฿800–1,500. The metered queue is always cheaper.' },
+      { title: 'Budget an hour for peak hour', detail: 'Expressway saves 30–40 min but costs ฿70 extra. Without it, Sukhumvit/Silom journeys can take 90 min between 17:00–20:00.' },
+    ],
+    warnings: [
+      'Touts in arrivals jackets are not official — they are unlicensed.',
+      'Metered taxi + expressway to Sukhumvit = ฿350–500 total. Anything above ฿600 is a rip-off.',
+      'Uber/Bolt can be booked from the designated rideshare pickup zone (P4 floor, follow signs).',
+    ],
+  },
+  {
+    id: 'visa', title: 'Renew a 30/60-day tourist visa', mins: 8, area: 'Paperwork',
+    body: 'Extension at Chaeng Wattana immigration. Bring passport + 2 photos + TM.7 form + ฿1,900 cash + accommodation proof. Go before 9am or expect 4 hours.',
+    steps: [
+      { title: 'Download and print the TM.7 form', detail: 'Available at immigration.go.th or pick up a printed copy from the office. Fill in black ink only — no corrections with white-out.' },
+      { title: 'Prepare your documents', detail: 'Passport + copy of photo page + copy of entry stamp page. Two passport photos (4×6 cm). Proof of address: hotel booking or lease agreement.' },
+      { title: 'Get to Chaeng Wattana by 8:30am', detail: 'Take MRT to Ministry of Foreign Affairs stop (Purple Line). Arriving before 9am gets you a queue number before the rush. The office opens at 8:30.' },
+      { title: 'Pay ฿1,900 cash at the counter', detail: 'No card payments. Exact change preferred. Hand over your full document set, get a receipt, and wait to be called.' },
+      { title: 'Collect your passport', detail: 'Same-day collection if you arrive early. They will stamp a 30-day extension on your current permission to stay. Check the date before leaving.' },
+    ],
+    warnings: [
+      'Queue numbers run out — arrival after 11am may result in being turned away.',
+      'Photos must be taken within the last 6 months and show a white background.',
+      'Extensions are for staying longer, not for multiple entries. Border hopping requires a new visa.',
+    ],
+  },
+  {
+    id: 'sim', title: 'Get a SIM card', mins: 4, area: 'Setup',
+    body: 'AIS, dtac, TrueMove H sell tourist SIMs at the airport. ฿299 = 8 days unlimited. Bring passport.',
+    steps: [
+      { title: 'Choose your carrier at the airport', detail: 'All three carriers have counters in arrivals. AIS and TrueMove H have the best coverage outside Bangkok. DTAC is solid in the city.' },
+      { title: 'Pick the right plan', detail: '฿299 = 8 days unlimited data (speed throttled after daily cap). ฿599 = 30 days. For islands or Phuket, confirm coverage before buying.' },
+      { title: 'Show your passport', detail: 'Required by Thai law for SIM registration. They photograph the photo page and log the IMSI. Takes 5 minutes.' },
+      { title: 'Test before leaving the counter', detail: 'Ask staff to confirm the SIM is activated and data is working. Data sometimes needs a manual APN setting on older phones — staff can configure it.' },
+    ],
+    warnings: [
+      'Airport prices match in-city prices now — no need to wait.',
+      '7-Eleven sells top-ups for any carrier if you run out of data mid-trip.',
+      'Some plans throttle to 1 Mbps after a daily cap — enough for maps and messaging, not video.',
+    ],
+  },
+  {
+    id: 'bank', title: 'Open a Thai bank account', mins: 12, area: 'Long stay',
+    body: 'Need a non-tourist visa. Bangkok Bank Silom branch is foreigner-friendly. Bring all originals, all copies.',
+    steps: [
+      { title: 'Confirm you have the right visa', detail: 'Tourist visas are not accepted. You need a Non-Immigrant B, O, ED, or retirement extension (Non-O). Education visa holders: bring enrollment letter.' },
+      { title: 'Prepare a full document set', detail: 'Passport + copy. Visa + copy. TM.6 departure card. Work permit or letter from school/employer. Proof of address: signed lease or 3-month utility bill.' },
+      { title: 'Go to Bangkok Bank Silom branch', detail: 'Most foreigner-friendly branch. Opens 8:30am weekdays. Ask specifically for a "savings account" — the teller will guide you through forms.' },
+      { title: 'Deposit the minimum opening balance', detail: '฿500 for a basic savings account. PromptPay registration is done at the counter — link your national ID or Thai phone number.' },
+    ],
+    warnings: [
+      'Kasikorn Bank has become stricter with foreigners — Bangkok Bank or SCB are easier.',
+      'Some branches will send you away without a reason. Try a different branch the same day.',
+      'PromptPay (instant transfer) is more useful than the account number for most day-to-day transfers.',
+    ],
+  },
+  {
+    id: 'apps', title: 'Transport apps that actually work', mins: 5, area: 'Setup',
+    body: 'Bolt usually cheaper than Grab. inDrive for negotiating. Line Man for food. Maps.me offline for islands.',
+    steps: [
+      { title: 'Install Bolt for everyday rides', detail: 'Bolt is 10–20% cheaper than Grab for most Bangkok trips. Works well for airport pickup from the designated zones. Add payment card before you land.' },
+      { title: 'Keep Grab as a backup', detail: 'Grab has GrabFood, GrabMart, and GrabCar in one app. More drivers in outer Bangkok suburbs and at airports. Use when Bolt shows surge pricing.' },
+      { title: 'Use Line Man for food delivery', detail: 'Larger Thai restaurant selection than Grab Food. English interface. Works in Bangkok and most major cities. Payment: card or cash on delivery.' },
+      { title: 'Download Maps.me offline for islands', detail: 'Phuket, Koh Samui, and Chiang Mai have patchy mobile signal in rural areas. Maps.me downloads the full map offline including walking paths and restaurants.' },
+    ],
+    warnings: [
+      'Bolt and Grab only pick up from designated zones at Suvarnabhumi — follow airport signs.',
+      'inDrive lets you name your price — useful for longer trips but drivers can decline.',
+      'Google Maps walking directions are reliable in Bangkok. Driving directions sometimes route through closed roads.',
+    ],
+  },
+  {
+    id: 'mistakes', title: 'Common tourist mistakes', mins: 6, area: 'Streetwise',
+    body: "Don't take tuk-tuks from the Grand Palace. Verify temples are actually open. Don't hand passport to scooter rentals.",
+    steps: [
+      { title: 'Never take a tuk-tuk from a tourist attraction', detail: 'Tuk-tuks outside Wat Pho, Grand Palace, or Khao San Road are almost always running a gem/tailor shop tour. They earn commission and will loop you around shops before the destination.' },
+      { title: 'Call ahead to confirm temple hours', detail: 'Wat Pho is closed for ceremonies occasionally. Wat Arun closes for renovation sections without notice. A 5-minute Google search saves a wasted trip.' },
+      { title: 'Never hand over your passport to scooter rentals', detail: "It is illegal in Thailand — they have no right to hold it. Leave a cash deposit instead (฿1,000–2,000). Photograph the scooter's existing damage before riding." },
+      { title: 'Check taxi meters before every journey', detail: 'If the driver refuses to use the meter, get out and get another taxi. Starting fare is ฿35. Any "fixed price" to a tourist area is inflated.' },
+    ],
+    warnings: [
+      '"The temple is closed today but I know a great shop nearby" — classic distraction scam.',
+      'Grand Palace dress code is strictly enforced. Shoulders and knees must be covered — bring a sarong.',
+      'ATM skimming exists — cover your PIN and prefer ATMs inside bank branches.',
+    ],
+  },
+  {
+    id: 'rains', title: "When it's rainy season", mins: 4, area: 'Climate',
+    body: 'May–Oct is wet season. Rains usually in late afternoon and clear within an hour. Plan indoor lunch, outdoor evening.',
+    steps: [
+      { title: 'Plan outdoor activities before noon', detail: 'Rains typically arrive between 14:00–17:00. Temples, markets, and street food are best in the morning when it is dry and slightly cooler.' },
+      { title: 'Use air-conditioned venues for lunch', detail: 'Malls, museum cafes, and rooftop restaurants make ideal midday stops. The rain usually passes in 45–90 minutes.' },
+      { title: 'Return outside in the evening', detail: 'After rains, Bangkok temperature drops 4–6°C and street food stalls open for dinner. Evenings May–Oct are often the most pleasant time outdoors.' },
+      { title: 'Pack a small umbrella or poncho', detail: 'Sold at every 7-Eleven for ฿60–100. More useful than a full rain jacket. Taxi apps surge during rain — have cash and flag off the street if needed.' },
+    ],
+    warnings: [
+      'Flash flooding is real in some Sukhumvit side streets — avoid underpasses after heavy rain.',
+      'Phuket and Koh Samui peaks are September–October — some boat services suspend in rough sea.',
+      'Check Thai Meteorological Department (tmd.go.th) for accurate 3-day forecasts.',
+    ],
+  },
+  {
+    id: 'money', title: 'Cash, cards, ATMs', mins: 5, area: 'Money',
+    body: 'Most ATMs charge ฿220 foreign fee — except AEON (free). Markets, taxis, tuk-tuks: cash. Malls and chains take card.',
+    steps: [
+      { title: 'Find an AEON ATM for fee-free withdrawals', detail: 'AEON machines charge ฿0 foreign transaction fee (your home bank may still charge). Locations: Big C Extra, Lotus, Makro, and some MRT stations.' },
+      { title: 'Withdraw larger amounts less often', detail: 'The ฿220 fee at other ATMs is per transaction, not per baht. Withdrawing ฿5,000 at once beats five ฿1,000 withdrawals. Max per transaction: ฿20,000–30,000.' },
+      { title: 'Keep ฿500–1,000 in small notes at all times', detail: 'Street food, tuk-tuks, temple entry, and motorcycle taxis require cash. ฿1,000 notes are sometimes refused at stalls.' },
+      { title: 'Use cards at malls and chains', detail: 'Central, Terminal 21, and all 7-Elevens accept Visa/Mastercard. Contactless is widely supported. Amex and Discover have patchy acceptance.' },
+    ],
+    warnings: [
+      'Always decline "currency conversion by merchant" (DCC) at ATMs — use local currency (THB).',
+      'Some banks charge a 2–3% foreign transaction fee on top of the ATM fee — check your home bank.',
+      'Money changers on Khao San Road and Silom often give better rates than airport or hotel exchanges.',
+    ],
+  },
 ]
 
 export const TOURIST_TOOLS: TouristTool[] = [

@@ -3,14 +3,27 @@
 import { useState, Fragment } from 'react'
 import Link from 'next/link'
 import { useUIStore } from '@/store/ui'
+import { insertSubmission } from '@/lib/db'
 import { CATEGORIES, CITIES } from '@/data'
 import I from '@/components/ui/icons'
 
+type Form = {
+  name: string; category: string; city: string; area: string
+  desc: string; address: string; hours: string; price: number | null
+}
+
+const EMPTY: Form = { name: '', category: '', city: 'bangkok', area: '', desc: '', address: '', hours: '', price: null }
+
 export default function SubmitPage() {
   const signedIn = useUIStore(s => s.signedIn)
+  const userEmail = useUIStore(s => s.userEmail)
   const [step, setStep] = useState(1)
+  const [form, setForm] = useState<Form>(EMPTY)
+  const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [form, setForm] = useState({ name: '', category: '', area: '', city: 'bangkok', desc: '' })
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const set = (k: keyof Form, v: string | number | null) => setForm(f => ({ ...f, [k]: v }))
 
   if (!signedIn) {
     return (
@@ -34,11 +47,32 @@ export default function SubmitPage() {
         <h1 className="h2">{"Thanks — we'll take a look."}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 8 }}>An editor will review your submission within 48 hours. We&apos;ll email you if we have questions.</p>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 22 }}>
-          <Link href="/account" className="btn">See my contributions</Link>
+          <button className="btn" onClick={() => { setForm(EMPTY); setStep(1); setSubmitted(false) }}>Submit another</button>
           <Link href="/map" className="btn btn-primary">Back to the map</Link>
         </div>
       </main>
     )
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (step < 3) { setStep(step + 1); return }
+    setSubmitting(true)
+    setSubmitError(null)
+    const { error } = await insertSubmission({
+      name: form.name,
+      category: form.category,
+      city: form.city,
+      area: form.area,
+      description: form.desc,
+      address: form.address,
+      hours: form.hours,
+      price_level: form.price,
+      submitted_by: userEmail,
+    })
+    setSubmitting(false)
+    if (error) { setSubmitError('Something went wrong — please try again.'); return }
+    setSubmitted(true)
   }
 
   return (
@@ -59,51 +93,84 @@ export default function SubmitPage() {
         ))}
       </div>
 
-      <form className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }} onSubmit={e => { e.preventDefault(); if (step < 3) setStep(step + 1); else setSubmitted(true) }}>
+      <form className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }} onSubmit={handleSubmit}>
         {step === 1 && <>
-          <div className="field"><label>Place name *</label><input className="input" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Sang Som Noodles"/></div>
-          <div className="field"><label>Category *</label>
-            <select className="select" required value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
+          <div className="field">
+            <label>Place name *</label>
+            <input className="input" required value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Sang Som Noodles"/>
+          </div>
+          <div className="field">
+            <label>Category *</label>
+            <select className="select" required value={form.category} onChange={e => set('category', e.target.value)}>
               <option value="">— select —</option>
-              {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              {CATEGORIES.filter(c => !c.optional).map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </div>
-          <div className="field"><label>City *</label>
-            <select className="select" required value={form.city} onChange={e => setForm({ ...form, city: e.target.value })}>
+          <div className="field">
+            <label>City *</label>
+            <select className="select" required value={form.city} onChange={e => set('city', e.target.value)}>
               {CITIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
-          <div className="field"><label>Area / neighbourhood</label><input className="input" value={form.area} onChange={e => setForm({ ...form, area: e.target.value })} placeholder="e.g. Thong Lor"/></div>
+          <div className="field">
+            <label>Area / neighbourhood</label>
+            <input className="input" value={form.area} onChange={e => set('area', e.target.value)} placeholder="e.g. Thong Lor"/>
+          </div>
         </>}
 
         {step === 2 && <>
-          <div className="field"><label>Short description *</label>
-            <textarea className="textarea" required value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })}
+          <div className="field">
+            <label>Short description *</label>
+            <textarea className="textarea" required value={form.desc} onChange={e => set('desc', e.target.value)}
               placeholder="What's special? What do regulars order? Anything to skip? 2–3 sentences is perfect."/>
             <div className="hint">No marketing copy please. Honest, specific, useful.</div>
           </div>
-          <div className="field"><label>Address or Google Maps link</label><input className="input" placeholder="https://maps.google.com/..."/></div>
-          <div className="field"><label>Opening hours</label><input className="input" placeholder="e.g. Daily 10:00 – 22:00"/></div>
-          <div className="field"><label>Price level</label>
+          <div className="field">
+            <label>Address or Google Maps link</label>
+            <input className="input" value={form.address} onChange={e => set('address', e.target.value)} placeholder="https://maps.google.com/..."/>
+          </div>
+          <div className="field">
+            <label>Opening hours</label>
+            <input className="input" value={form.hours} onChange={e => set('hours', e.target.value)} placeholder="e.g. Daily 10:00 – 22:00"/>
+          </div>
+          <div className="field">
+            <label>Price level</label>
             <div style={{ display: 'flex', gap: 6 }}>
-              {[1, 2, 3, 4].map(n => <button key={n} type="button" className="chip" style={{ flex: 1, justifyContent: 'center' }}>{'฿'.repeat(n)}</button>)}
+              {[1, 2, 3, 4].map(n => (
+                <button key={n} type="button" className="chip" onClick={() => set('price', form.price === n ? null : n)}
+                  style={{ flex: 1, justifyContent: 'center', background: form.price === n ? 'var(--brand)' : undefined, color: form.price === n ? '#fff' : undefined }}>
+                  {'฿'.repeat(n)}
+                </button>
+              ))}
             </div>
           </div>
         </>}
 
         {step === 3 && <>
           <div className="card card-flat" style={{ padding: 14 }}>
-            <div className="mono" style={{ marginBottom: 8 }}>Review</div>
+            <div className="mono" style={{ marginBottom: 8 }}>Review your submission</div>
             <div style={{ fontSize: 14.5 }}><strong>{form.name || '(no name)'}</strong> — {(CATEGORIES.find(c => c.id === form.category) || {}).label || '(no category)'}</div>
-            <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{form.area || '(area)'}, {form.city === 'phuket' ? 'Phuket' : 'Bangkok'}</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>
+              {[form.area, form.city === 'phuket' ? 'Phuket' : 'Bangkok'].filter(Boolean).join(', ')}
+              {form.hours && <span> · {form.hours}</span>}
+              {form.price && <span> · {'฿'.repeat(form.price)}</span>}
+            </div>
+            {form.address && <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>{form.address}</div>}
             <div style={{ fontSize: 13, marginTop: 12, lineHeight: 1.55 }}>{form.desc || '(description)'}</div>
           </div>
+          {submitError && (
+            <div style={{ padding: '10px 14px', borderRadius: 10, background: '#C13D2F12', color: 'var(--brand)', fontSize: 13 }}>
+              {submitError}
+            </div>
+          )}
           <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>By submitting you agree to our editorial standards. We may edit for accuracy and tone. You&apos;ll be credited.</div>
         </>}
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
           {step > 1 && <button type="button" className="btn" onClick={() => setStep(step - 1)}>← Back</button>}
-          <button type="submit" className="btn btn-primary" style={{ marginLeft: 'auto' }}>{step < 3 ? 'Continue →' : <><I.send size={16}/> Submit</>}</button>
+          <button type="submit" className="btn btn-primary" style={{ marginLeft: 'auto' }} disabled={submitting}>
+            {step < 3 ? 'Continue →' : submitting ? 'Submitting…' : <><I.send size={16}/> Submit</>}
+          </button>
         </div>
       </form>
     </main>

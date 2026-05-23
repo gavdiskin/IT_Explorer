@@ -32,30 +32,34 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
       <h1 className="h1" style={{ marginTop: 12 }}>{g.title}</h1>
       <p style={{ marginTop: 18, fontSize: 17, lineHeight: 1.6 }}>{g.body}</p>
 
-      <h3 className="h3" style={{ marginTop: 32 }}>Step by step</h3>
-      <ol style={{ paddingLeft: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
-        {['Get to the right counter', 'Bring the right documents', 'Pay and wait', 'Confirm before you leave'].map((s, i) => (
-          <li key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--brand)', color: '#fff', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
-            <div>
-              <div className="h4">{s}</div>
-              <div style={{ color: 'var(--muted)', fontSize: 14, marginTop: 4, lineHeight: 1.55 }}>Detailed steps with prices, exact addresses, and what to say go here.</div>
-            </div>
-          </li>
-        ))}
-      </ol>
+      {g.steps && g.steps.length > 0 && (
+        <>
+          <h3 className="h3" style={{ marginTop: 32 }}>Step by step</h3>
+          <ol style={{ paddingLeft: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
+            {g.steps.map((s, i) => (
+              <li key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--brand)', color: '#fff', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
+                <div>
+                  <div className="h4">{s.title}</div>
+                  <div style={{ color: 'var(--muted)', fontSize: 14, marginTop: 4, lineHeight: 1.55 }}>{s.detail}</div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
 
-      <div className="card" style={{ marginTop: 32, padding: 18, background: '#FFF4E5', boxShadow: 'inset 0 0 0 1px #D9A23A40' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#9A6E15', marginBottom: 8 }}>
-          <I.warning size={20}/>
-          <span className="h4" style={{ color: '#9A6E15' }}>Watch out for</span>
+      {g.warnings && g.warnings.length > 0 && (
+        <div className="card" style={{ marginTop: 32, padding: 18, background: '#FFF4E5', boxShadow: 'inset 0 0 0 1px #D9A23A40' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#9A6E15', marginBottom: 8 }}>
+            <I.warning size={20}/>
+            <span className="h4" style={{ color: '#9A6E15' }}>Watch out for</span>
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13.5, lineHeight: 1.6, color: '#5C4615' }}>
+            {g.warnings.map((w, i) => <li key={i}>{w}</li>)}
+          </ul>
         </div>
-        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13.5, lineHeight: 1.6, color: '#5C4615' }}>
-          <li>Touts at arrivals/exit offering &ldquo;special prices&rdquo;</li>
-          <li>Anyone asking you to follow them away from the official counter</li>
-          <li>Keep digital backups of your passport</li>
-        </ul>
-      </div>
+      )}
     </main>
   )
 }

@@ -91,3 +91,33 @@ export async function deleteSaved(userId: string, placeSlug: string): Promise<vo
     .from('saved_places').delete().eq('user_id', userId).eq('place_slug', placeSlug)
   if (error) console.error('[db] deleteSaved:', error.message)
 }
+
+export interface SubmissionPayload {
+  name: string
+  category: string
+  city: string
+  area: string
+  description: string
+  address: string
+  hours: string
+  price_level: number | null
+  submitted_by: string | null
+}
+
+export async function insertSubmission(payload: SubmissionPayload): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not connected' }
+  const { error } = await supabase.from('user_submissions').insert({
+    name: payload.name,
+    category: payload.category,
+    city: payload.city,
+    area: payload.area || null,
+    description: payload.description,
+    address: payload.address || null,
+    hours: payload.hours || null,
+    price_level: payload.price_level,
+    submitted_by: payload.submitted_by,
+    status: 'pending',
+  })
+  if (error) { console.error('[db] insertSubmission:', error.message); return { error: error.message } }
+  return { error: null }
+}

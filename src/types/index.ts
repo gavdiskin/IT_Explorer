@@ -66,12 +66,19 @@ export interface PriceBenchmark {
   tip: string
 }
 
+export interface GuideStep {
+  title: string
+  detail: string
+}
+
 export interface Guide {
   id: string
   title: string
   mins: number
   area: string
   body: string
+  steps?: GuideStep[]
+  warnings?: string[]
 }
 
 export interface TouristTool {
