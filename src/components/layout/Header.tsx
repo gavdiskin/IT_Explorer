@@ -15,6 +15,7 @@ export function Header() {
   const city = useUIStore(s => s.city)
   const setCity = useUIStore(s => s.setCity)
   const signedIn = useUIStore(s => s.signedIn)
+  const role = useUIStore(s => s.role)
   const setDrawerOpen = useUIStore(s => s.setDrawerOpen)
 
   const isActive = (paths: string[]) =>
@@ -62,6 +63,9 @@ export function Header() {
           <Link href="/map" className="btn btn-sq btn-ghost only-mobile" aria-label="Search">
             <I.search size={18}/>
           </Link>
+          {role === 'admin' && (
+            <Link href="/admin" className="btn btn-ghost inline-only-desktop" style={{ fontSize: 12, padding: '6px 10px', color: 'var(--brand)', fontWeight: 600 }}>Admin</Link>
+          )}
           {signedIn ? (
             <ProfileMenu/>
           ) : (
@@ -83,6 +87,7 @@ function ProfileMenu() {
   const [open, setOpen] = useState(false)
   const signOut = useUIStore(s => s.signOut)
   const userEmail = useUIStore(s => s.userEmail)
+  const role = useUIStore(s => s.role)
   const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : '?'
   const displayName = userEmail ? userEmail.split('@')[0] : 'User'
 
@@ -123,9 +128,13 @@ function ProfileMenu() {
           minWidth: 220, padding: 8, border: '1px solid var(--line)',
         }}>
           <div style={{ padding: '10px 12px 12px', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ fontWeight: 600, fontSize: 14 }}>{displayName}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{displayName}</div>
+              {role === 'admin' && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: 'var(--brand)', color: '#fff', letterSpacing: '.04em' }}>ADMIN</span>}
+            </div>
             <div style={{ color: 'var(--muted)', fontSize: 12 }}>{userEmail}</div>
           </div>
+          {role === 'admin' && <Link href="/admin" style={{ ...menuRow, color: 'var(--brand)', fontWeight: 600 }}><I.sliders size={16}/> Admin panel</Link>}
           <Link href="/saved" style={menuRow}><I.bookmark size={16}/> Saved places</Link>
           <Link href="/recently-viewed" style={menuRow}><I.clock size={16}/> Recently viewed</Link>
           <Link href="/submit" style={menuRow}><I.plus size={16}/> Submit a place</Link>

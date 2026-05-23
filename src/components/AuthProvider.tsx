@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useUIStore } from '@/store/ui'
-import { fetchSavedSlugs } from '@/lib/db'
+import { fetchSavedSlugs, fetchUserRole } from '@/lib/db'
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = useUIStore(s => s.signIn)
@@ -13,16 +13,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!supabase) return
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        signIn(session.user.id, session.user.email ?? '')
+        const role = await fetchUserRole(session.user.id)
+        signIn(session.user.id, session.user.email ?? '', role)
         fetchSavedSlugs(session.user.id).then(loadSaved)
       }
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        signIn(session.user.id, session.user.email ?? '')
+        const role = await fetchUserRole(session.user.id)
+        signIn(session.user.id, session.user.email ?? '', role)
         fetchSavedSlugs(session.user.id).then(loadSaved)
       } else {
         signOut()

@@ -79,6 +79,7 @@ export interface Guide {
   body: string
   steps?: GuideStep[]
   warnings?: string[]
+  cover_url?: string
 }
 
 export interface TouristTool {

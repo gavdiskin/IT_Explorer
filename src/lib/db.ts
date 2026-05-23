@@ -1,5 +1,56 @@
 import { supabase } from './supabase'
-import type { Place, Category } from '@/types'
+import type { Place, Category, Guide, GuideStep } from '@/types'
+
+// ── Public types ─────────────────────────────────────────────────────────────
+
+export interface GuideRow {
+  id: string
+  title: string
+  mins: number
+  area: string
+  body: string
+  steps: GuideStep[]
+  warnings: string[]
+  cover_url: string | null
+  status: 'published' | 'draft'
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SubmissionRow {
+  id: number
+  name: string
+  category: string | null
+  city: string | null
+  area: string | null
+  description: string | null
+  address: string | null
+  hours: string | null
+  price_level: number | null
+  submitted_by: string | null
+  status: string
+  created_at: string
+}
+
+export interface UserRow {
+  id: string
+  email: string
+  role: 'user' | 'admin'
+}
+
+function rowToGuide(r: GuideRow): Guide {
+  return {
+    id: r.id,
+    title: r.title,
+    mins: r.mins,
+    area: r.area,
+    body: r.body,
+    steps: r.steps ?? [],
+    warnings: r.warnings ?? [],
+    cover_url: r.cover_url ?? undefined,
+  } as Guide & { cover_url?: string }
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToPlace(r: Record<string, any>): Place {
@@ -119,5 +170,107 @@ export async function insertSubmission(payload: SubmissionPayload): Promise<{ er
     status: 'pending',
   })
   if (error) { console.error('[db] insertSubmission:', error.message); return { error: error.message } }
+  return { error: null }
+}
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+
+export async function fetchUserRole(userId: string): Promise<'user' | 'admin'> {
+  if (!supabase) return 'user'
+  const { data, error } = await supabase
+    .from('profiles').select('role').eq('id', userId).single()
+  if (error || !data) return 'user'
+  return data.role === 'admin' ? 'admin' : 'user'
+}
+
+// ── Public guides ─────────────────────────────────────────────────────────────
+
+export async function fetchPublicGuides(): Promise<Guide[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('guides').select('*').eq('status', 'published').order('sort_order')
+  if (error) { console.error('[db] fetchPublicGuides:', error.message); return [] }
+  return (data as GuideRow[]).map(rowToGuide)
+}
+
+export async function fetchPublicGuide(id: string): Promise<Guide | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase
+    .from('guides').select('*').eq('id', id).eq('status', 'published').single()
+  if (error) { console.error('[db] fetchPublicGuide:', error.message); return null }
+  return data ? rowToGuide(data as GuideRow) : null
+}
+
+// ── Admin guides ──────────────────────────────────────────────────────────────
+
+export async function adminFetchGuides(): Promise<GuideRow[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('guides').select('*').order('sort_order')
+  if (error) { console.error('[db] adminFetchGuides:', error.message); return [] }
+  return (data ?? []) as GuideRow[]
+}
+
+export interface GuideSavePayload {
+  id: string
+  title: string
+  mins: number
+  area: string
+  body: string
+  steps: GuideStep[]
+  warnings: string[]
+  cover_url: string | null
+  status: 'published' | 'draft'
+  sort_order: number
+}
+
+export async function adminSaveGuide(payload: GuideSavePayload): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not connected' }
+  const { error } = await supabase.from('guides').upsert({
+    ...payload,
+    updated_at: new Date().toISOString(),
+  })
+  if (error) { console.error('[db] adminSaveGuide:', error.message); return { error: error.message } }
+  return { error: null }
+}
+
+export async function adminDeleteGuide(id: string): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not connected' }
+  const { error } = await supabase.from('guides').delete().eq('id', id)
+  if (error) { console.error('[db] adminDeleteGuide:', error.message); return { error: error.message } }
+  return { error: null }
+}
+
+// ── Admin submissions ─────────────────────────────────────────────────────────
+
+export async function adminFetchSubmissions(status?: string): Promise<SubmissionRow[]> {
+  if (!supabase) return []
+  let q = supabase.from('user_submissions').select('*').order('created_at', { ascending: false })
+  if (status) q = q.eq('status', status)
+  const { data, error } = await q
+  if (error) { console.error('[db] adminFetchSubmissions:', error.message); return [] }
+  return (data ?? []) as SubmissionRow[]
+}
+
+export async function adminUpdateSubmission(id: number, status: 'approved' | 'rejected'): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not connected' }
+  const { error } = await supabase.from('user_submissions').update({ status }).eq('id', id)
+  if (error) { console.error('[db] adminUpdateSubmission:', error.message); return { error: error.message } }
+  return { error: null }
+}
+
+// ── Admin users ───────────────────────────────────────────────────────────────
+
+export async function adminFetchUsers(): Promise<UserRow[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('get_users_with_roles')
+  if (error) { console.error('[db] adminFetchUsers:', error.message); return [] }
+  return (data ?? []) as UserRow[]
+}
+
+export async function adminUpdateUserRole(userId: string, role: 'user' | 'admin'): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not connected' }
+  const { error } = await supabase.from('profiles').update({ role }).eq('id', userId)
+  if (error) { console.error('[db] adminUpdateUserRole:', error.message); return { error: error.message } }
   return { error: null }
 }

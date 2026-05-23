@@ -1,16 +1,24 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { GUIDES } from '@/data'
+import { fetchPublicGuide } from '@/lib/db'
 import I from '@/components/ui/icons'
+import type { Guide } from '@/types'
 import type { Metadata } from 'next'
 
 export function generateStaticParams() {
   return GUIDES.map(g => ({ slug: g.id }))
 }
 
+async function getGuide(slug: string): Promise<Guide | null> {
+  const db = await fetchPublicGuide(slug)
+  if (db) return db
+  return GUIDES.find(x => x.id === slug) ?? null
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const g = GUIDES.find(x => x.id === slug)
+  const g = await getGuide(slug)
   if (!g) return {}
   return {
     title: `${g.title} — Inside Thailand`,
@@ -20,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function GuidePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const g = GUIDES.find(x => x.id === slug)
+  const g = await getGuide(slug)
   if (!g) notFound()
 
   return (
@@ -28,8 +36,17 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
       <div className="mono" style={{ marginBottom: 12 }}>
         <Link href="/guides" style={{ color: 'var(--muted)' }}>← All guides</Link>
       </div>
+
       <div className="tag" style={{ background: '#C13D2F20', color: 'var(--brand)' }}>{g.area} · {g.mins} min</div>
       <h1 className="h1" style={{ marginTop: 12 }}>{g.title}</h1>
+
+      {g.cover_url && (
+        <div style={{ marginTop: 20, borderRadius: 16, overflow: 'hidden', maxHeight: 320 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={g.cover_url} alt={g.title} style={{ width: '100%', height: 320, objectFit: 'cover' }}/>
+        </div>
+      )}
+
       <p style={{ marginTop: 18, fontSize: 17, lineHeight: 1.6 }}>{g.body}</p>
 
       {g.steps && g.steps.length > 0 && (

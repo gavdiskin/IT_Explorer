@@ -11,8 +11,9 @@ interface UIState {
 
   userId: string | null
   userEmail: string | null
+  role: 'user' | 'admin' | null
   signedIn: boolean
-  signIn: (userId: string, email: string) => void
+  signIn: (userId: string, email: string, role: 'user' | 'admin') => void
   signOut: () => void
 
   drawerOpen: boolean
@@ -43,9 +44,10 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   userId: null,
   userEmail: null,
+  role: null,
   signedIn: false,
-  signIn: (userId, email) => set({ signedIn: true, userId, userEmail: email }),
-  signOut: () => set({ signedIn: false, userId: null, userEmail: null, savedSet: new Set() }),
+  signIn: (userId, email, role) => set({ signedIn: true, userId, userEmail: email, role }),
+  signOut: () => set({ signedIn: false, userId: null, userEmail: null, role: null, savedSet: new Set() }),
 
   drawerOpen: false,
   setDrawerOpen: (drawerOpen) => set({ drawerOpen }),

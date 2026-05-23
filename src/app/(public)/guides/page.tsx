@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { GUIDES, ESSENTIAL_APPS } from '@/data'
+import { fetchPublicGuides } from '@/lib/db'
 import { SectionHead } from '@/components/ui/SectionHead'
 import I from '@/components/ui/icons'
+import type { Guide } from '@/types'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -9,9 +11,12 @@ export const metadata: Metadata = {
   description: 'Practical step-by-step guides for living and travelling in Thailand — SIM cards, visas, bank accounts, and transport apps.',
 }
 
-export default function GuidesPage() {
-  const groups: Record<string, typeof GUIDES> = {}
-  GUIDES.forEach(g => { (groups[g.area] = groups[g.area] || []).push(g) })
+export default async function GuidesPage() {
+  const dbGuides = await fetchPublicGuides()
+  const guides: Guide[] = dbGuides.length > 0 ? dbGuides : GUIDES
+
+  const groups: Record<string, Guide[]> = {}
+  guides.forEach(g => { (groups[g.area] = groups[g.area] || []).push(g) })
 
   return (
     <main className="route-mount">
@@ -31,6 +36,12 @@ export default function GuidesPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {items.map(g => (
                   <Link key={g.id} href={`/guides/${g.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderRadius: 10, color: 'var(--text)' }}>
+                    {g.cover_url && (
+                      <div style={{ width: 40, height: 30, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={g.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+                      </div>
+                    )}
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, fontSize: 14.5 }}>{g.title}</div>
                       <div className="mono" style={{ marginTop: 2 }}>{g.mins} min read</div>

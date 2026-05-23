@@ -11,6 +11,7 @@ export default function AccountPage() {
   const signedIn = useUIStore(s => s.signedIn)
   const signOut = useUIStore(s => s.signOut)
   const userEmail = useUIStore(s => s.userEmail)
+  const role = useUIStore(s => s.role)
   const city = useUIStore(s => s.city)
   const setCity = useUIStore(s => s.setCity)
   const showCannabis = useUIStore(s => s.showCannabis)
@@ -47,7 +48,9 @@ export default function AccountPage() {
             {initials}
           </div>
           <div>
-            <div className="mono">Member</div>
+            <div className="mono" style={{ color: role === 'admin' ? 'var(--brand)' : undefined }}>
+              {role === 'admin' ? 'Admin' : 'Member'}
+            </div>
             <h1 className="h2" style={{ margin: '4px 0 2px' }}>{displayName}</h1>
             <div style={{ color: 'var(--muted)', fontSize: 13 }}>{userEmail}</div>
           </div>
@@ -60,6 +63,11 @@ export default function AccountPage() {
       <section className="wrap" style={{ marginBottom: 32 }}>
         <SectionHead title="Quick links"/>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {role === 'admin' && (
+            <Link href="/admin" className="btn btn-primary" style={{ gap: 8 }}>
+              <I.sliders size={15}/> Admin panel
+            </Link>
+          )}
           <Link href="/saved" className="btn">
             <I.bookmark size={15}/> Saved places
             {savedSet.size > 0 && <span style={{ marginLeft: 4, background: 'var(--brand)', color: '#fff', borderRadius: 999, fontSize: 11, padding: '1px 6px' }}>{savedSet.size}</span>}

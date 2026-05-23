@@ -77,5 +77,9 @@ I.beach     = (p={}) => wrap(<><circle cx="6" cy="6" r="3"/><path d="M6 9v13M2 1
 I.send      = (p={}) => wrap(<><path d="M3 12 21 3l-7 18-3-7z"/><path d="m10 14 4-4"/></>, p)
 I.refresh   = (p={}) => wrap(<><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></>, p)
 I.mail      = (p={}) => wrap(<><rect x="3" y="6" width="18" height="13" rx="2"/><path d="m3 6 9 7 9-7"/></>, p)
+I.check     = (p={}) => wrap(<><path d="M5 12l5 5L19 7"/></>, p)
+I.users     = (p={}) => wrap(<><circle cx="9" cy="7" r="4"/><path d="M3 21a6 6 0 0 1 12 0"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21a6 6 0 0 0-9-5.18"/></>, p)
+I.edit      = (p={}) => wrap(<><path d="M4 20h4l11-11-4-4L4 16z"/><path d="m15 5 4 4"/></>, p)
+I.trash     = (p={}) => wrap(<><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12h12l1-12"/><path d="M9 7V4h6v3"/></>, p)
 
 export default I
