@@ -12,7 +12,7 @@ function rowToPlace(r: Record<string, any>): Place {
     area: r.area ?? '',
     city: r.city ?? '',
     station: r.nearest_station ?? undefined,
-    price: r.price_level ?? 2,
+    price: Math.min(4, Math.max(1, r.price_level ?? 2)),
     rating: Number(r.rating ?? 0),
     reviews: r.reviews_count ?? undefined,
     distance: r.distance ?? undefined,
