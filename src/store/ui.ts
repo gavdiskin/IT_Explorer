@@ -19,6 +19,7 @@ interface UIState {
   setDrawerOpen: (open: boolean) => void
 
   showCannabis: boolean
+  setShowCannabis: (v: boolean) => void
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -50,4 +51,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   setDrawerOpen: (drawerOpen) => set({ drawerOpen }),
 
   showCannabis: false,
+  setShowCannabis: (v) => set({ showCannabis: v }),
 }))
+
