@@ -30,9 +30,14 @@ export default function SignInPage() {
         if (error) throw error
         router.push('/')
       } else {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const { data, error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
-        setSignedUp(true)
+        // If email confirmation is disabled, a session is returned immediately
+        if (data.session) {
+          router.push('/')
+        } else {
+          setSignedUp(true)
+        }
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
