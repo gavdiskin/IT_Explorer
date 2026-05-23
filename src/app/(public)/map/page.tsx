@@ -76,7 +76,6 @@ function MapFloating({ initialQuery, initialCat }: { initialQuery: string; initi
       </div>
 
       <SelectedPopup st={st}/>
-      <FabColumn/>
 
       <div className="only-tablet-up" style={{ position: 'absolute', left: 14, bottom: 24, zIndex: 5, background: 'var(--bg-card)', borderRadius: 14, padding: 12, boxShadow: 'var(--shadow)', minWidth: 240, maxHeight: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -136,16 +135,6 @@ function SelectedPopup({ st, offsetForDrawer }: { st: MapState; offsetForDrawer?
   )
 }
 
-function FabColumn() {
-  return (
-    <div className="map-fab-col">
-      <button className="fab" aria-label="Locate"><I.locate size={18}/></button>
-      <button className="fab" aria-label="Open in Google Maps"><I.ext size={18}/></button>
-      <button className="fab" aria-label="Zoom in"><I.plus size={16}/></button>
-      <button className="fab" aria-label="Zoom out"><I.minus size={16}/></button>
-    </div>
-  )
-}
 
 function MobileSheet({ st }: { st: MapState }) {
   const [open, setOpen] = useState(true)
