@@ -175,12 +175,11 @@ export async function insertSubmission(payload: SubmissionPayload): Promise<{ er
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
-export async function fetchUserRole(userId: string): Promise<'user' | 'admin'> {
+export async function fetchUserRole(_userId: string): Promise<'user' | 'admin'> {
   if (!supabase) return 'user'
-  const { data, error } = await supabase
-    .from('profiles').select('role').eq('id', userId).single()
-  if (error || !data) return 'user'
-  return data.role === 'admin' ? 'admin' : 'user'
+  const { data, error } = await supabase.rpc('get_my_role')
+  if (error) { console.error('[fetchUserRole]', error.message, error.code); return 'user' }
+  return data === 'admin' ? 'admin' : 'user'
 }
 
 // ── Public guides ─────────────────────────────────────────────────────────────
