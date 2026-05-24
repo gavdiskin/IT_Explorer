@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { GUIDES } from '@/data'
 import { fetchPublicGuide } from '@/lib/db'
 import I from '@/components/ui/icons'
+import { AdminEditLink } from '@/components/ui/AdminEditLink'
 import type { Guide } from '@/types'
 import type { Metadata } from 'next'
 
@@ -33,8 +34,9 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
 
   return (
     <main className="wrap route-mount" style={{ padding: '24px var(--gutter) 64px', maxWidth: 860 }}>
-      <div className="mono" style={{ marginBottom: 12 }}>
+      <div className="mono" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Link href="/guides" style={{ color: 'var(--muted)' }}>← All guides</Link>
+        <AdminEditLink href={`/admin/guides/${g.id}`}/>
       </div>
 
       <div className="tag" style={{ background: '#C13D2F20', color: 'var(--brand)' }}>{g.area} · {g.mins} min</div>

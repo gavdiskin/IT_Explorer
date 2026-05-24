@@ -60,6 +60,7 @@ type MapState = ReturnType<typeof useMapState>
 function MapFloating({ initialQuery, initialCat }: { initialQuery: string; initialCat: string }) {
   const st = useMapState(initialQuery, initialCat)
   const city = useUIStore(s => s.city)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   return (
     <main className="map-page route-mount">
       <GMap pins={st.filtered} selectedId={st.selectedId} onSelect={p => st.setSel(p.id)} city={city}/>
@@ -77,14 +78,29 @@ function MapFloating({ initialQuery, initialCat }: { initialQuery: string; initi
 
       <SelectedPopup st={st}/>
 
-      <div className="only-tablet-up" style={{ position: 'absolute', left: 14, bottom: 24, zIndex: 5, background: 'var(--bg-card)', borderRadius: 14, padding: 12, boxShadow: 'var(--shadow)', minWidth: 240, maxHeight: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <div className="h4" style={{ fontSize: 14 }}>{st.filtered.length} {st.filtered.length === 1 ? 'place' : 'places'}</div>
-          <button className="btn btn-ghost" style={{ padding: 4, fontSize: 11 }} onClick={() => st.setOpenFilters(true)}><I.sliders size={14}/> Filter</button>
-        </div>
-        <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 360 }}>
-          {st.filtered.slice(0, 8).map(p => <PlaceCard key={p.id} place={p} compact/>)}
-        </div>
+      <div className="only-tablet-up" style={{ position: 'absolute', left: 14, bottom: 24, zIndex: 5 }}>
+        {sidebarOpen ? (
+          <div style={{ background: 'var(--bg-card)', borderRadius: 14, padding: 12, boxShadow: 'var(--shadow)', minWidth: 240, maxHeight: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div className="h4" style={{ fontSize: 14 }}>{st.filtered.length} {st.filtered.length === 1 ? 'place' : 'places'}</div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button className="btn btn-ghost" style={{ padding: 4, fontSize: 11 }} onClick={() => st.setOpenFilters(true)}><I.sliders size={14}/> Filter</button>
+                <button className="btn btn-sq btn-ghost" style={{ padding: 4 }} onClick={() => setSidebarOpen(false)} aria-label="Hide list"><I.x size={14}/></button>
+              </div>
+            </div>
+            <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 360 }}>
+              {st.filtered.slice(0, 8).map(p => <PlaceCard key={p.id} place={p} compact/>)}
+            </div>
+          </div>
+        ) : (
+          <button
+            className="btn btn-ghost"
+            style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow)', borderRadius: 10, padding: '8px 12px', fontSize: 12, gap: 6 }}
+            onClick={() => setSidebarOpen(true)}
+          >
+            <I.search size={13}/> {st.filtered.length} places
+          </button>
+        )}
       </div>
 
       <MobileSheet st={st}/>
