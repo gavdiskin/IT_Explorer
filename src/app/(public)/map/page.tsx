@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo, Suspense } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useUIStore } from '@/store/ui'
-import { CATEGORIES, FOOD_FILTERS } from '@/data'
+import { CATEGORIES, FOOD_FILTERS, PLACES } from '@/data'
 import { usePlaces } from '@/hooks/usePlaces'
 import { PlaceCard } from '@/components/ui/PlaceCard'
 import { Slot } from '@/components/ui/Slot'
@@ -23,7 +23,7 @@ export default function MapPage() {
 
 function MapPageInner() {
   const searchParams = useSearchParams()
-  return <MapFloating initialQuery={searchParams.get('q') ?? ''} initialCat={searchParams.get('cat') ?? 'all'}/>
+  return <MapFloating urlQuery={searchParams.get('q') ?? ''} initialCat={searchParams.get('cat') ?? 'all'}/>
 }
 
 function useMapState(initialQuery: string, initialCategory: string) {
@@ -38,29 +38,45 @@ function useMapState(initialQuery: string, initialCategory: string) {
 
   const all = cityPlaces.filter(p => !p.optional || showCannabis)
 
+  function textMatch(places: typeof all, q: string) {
+    const lq = q.toLowerCase()
+    return places.filter(p => [
+      p.name, p.subcategory, p.area, p.category, ...(p.tags || []), ...(p.cuisine || []),
+      (CATEGORIES.find(c => c.id === p.category) || {}).label || '',
+    ].join(' ').toLowerCase().includes(lq))
+  }
+
   const filtered = useMemo(() => {
     let r = all
     if (activeCat !== 'all') r = r.filter(p => p.category === activeCat)
     if (foodTags.length) r = r.filter(p => foodTags.some(t => (p.cuisine || []).includes(t)))
-    if (query.trim()) {
-      const q = query.toLowerCase()
-      r = r.filter(p => [
-        p.name, p.subcategory, p.area, p.category, ...(p.tags || []), ...(p.cuisine || []),
-        (CATEGORIES.find(c => c.id === p.category) || {}).label || '',
-      ].join(' ').toLowerCase().includes(q))
-    }
+    if (query.trim()) r = textMatch(r, query)
     return r
   }, [all, activeCat, foodTags, query])
 
-  return { query, setQuery, activeCat, setCat, foodTags, setFoodTags, filtered, cityPlaces, selectedId, setSel, openFilters, setOpenFilters }
+  // When a text query finds nothing in the selected city, fall back to all cities
+  const crossCityResults = useMemo(() => {
+    if (!query.trim() || filtered.length > 0) return null
+    const allPlaces = PLACES.filter(p => !p.optional || showCannabis)
+    return textMatch(allPlaces, query)
+  }, [filtered, query, showCannabis])
+
+  const displayed = crossCityResults ?? filtered
+  const isCrossCity = crossCityResults !== null && crossCityResults.length > 0
+
+  return { query, setQuery, activeCat, setCat, foodTags, setFoodTags, filtered, displayed, isCrossCity, cityPlaces, selectedId, setSel, openFilters, setOpenFilters }
 }
 
 type MapState = ReturnType<typeof useMapState>
 
-function MapFloating({ initialQuery, initialCat }: { initialQuery: string; initialCat: string }) {
-  const st = useMapState(initialQuery, initialCat)
+function MapFloating({ urlQuery, initialCat }: { urlQuery: string; initialCat: string }) {
+  const st = useMapState(urlQuery, initialCat)
   const city = useUIStore(s => s.city)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  // Keep map search in sync when the Header search bar pushes a new ?q= to the URL
+  useEffect(() => { st.setQuery(urlQuery) }, [urlQuery, st.setQuery])
+
   return (
     <main className="map-page route-mount">
       <GMap pins={st.filtered} selectedId={st.selectedId} onSelect={p => st.setSel(p.id)} city={city}/>
@@ -81,15 +97,18 @@ function MapFloating({ initialQuery, initialCat }: { initialQuery: string; initi
       <div className="only-tablet-up" style={{ position: 'absolute', left: 14, bottom: 24, zIndex: 5 }}>
         {sidebarOpen ? (
           <div style={{ background: 'var(--bg-card)', borderRadius: 14, padding: 12, boxShadow: 'var(--shadow)', minWidth: 240, maxHeight: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <div className="h4" style={{ fontSize: 14 }}>{st.filtered.length} {st.filtered.length === 1 ? 'place' : 'places'}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div>
+                <div className="h4" style={{ fontSize: 14 }}>{st.displayed.length} {st.displayed.length === 1 ? 'place' : 'places'}</div>
+                {st.isCrossCity && <div style={{ fontSize: 11, color: 'var(--brand)', marginTop: 1 }}>Showing all cities</div>}
+              </div>
               <div style={{ display: 'flex', gap: 4 }}>
                 <button className="btn btn-ghost" style={{ padding: 4, fontSize: 11 }} onClick={() => st.setOpenFilters(true)}><I.sliders size={14}/> Filter</button>
                 <button className="btn btn-sq btn-ghost" style={{ padding: 4 }} onClick={() => setSidebarOpen(false)} aria-label="Hide list"><I.x size={14}/></button>
               </div>
             </div>
             <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 360 }}>
-              {st.filtered.slice(0, 8).map(p => <PlaceCard key={p.id} place={p} compact/>)}
+              {st.displayed.slice(0, 8).map(p => <PlaceCard key={p.id} place={p} compact showCity={st.isCrossCity}/>)}
             </div>
           </div>
         ) : (
@@ -98,7 +117,7 @@ function MapFloating({ initialQuery, initialCat }: { initialQuery: string; initi
             style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow)', borderRadius: 10, padding: '8px 12px', fontSize: 12, gap: 6 }}
             onClick={() => setSidebarOpen(true)}
           >
-            <I.search size={13}/> {st.filtered.length} places
+            <I.search size={13}/> {st.displayed.length} places
           </button>
         )}
       </div>
@@ -161,13 +180,13 @@ function MobileSheet({ st }: { st: MapState }) {
       </button>
       <div className="map-sheet__head">
         <div>
-          <span className="h4" style={{ fontSize: 14 }}>{st.filtered.length} places</span>
+          <span className="h4" style={{ fontSize: 14 }}>{st.displayed.length} places</span>
           {st.activeCat !== 'all' && <span style={{ color: 'var(--muted)', fontSize: 12, marginLeft: 6 }}>· {(CATEGORIES.find(c => c.id === st.activeCat) || {}).label}</span>}
         </div>
         <button className="btn btn-ghost" style={{ padding: 4 }} onClick={() => st.setOpenFilters(true)}><I.sliders size={14}/> Filter</button>
       </div>
       <div className="map-sheet__body">
-        {st.filtered.map(p => <PlaceCard key={p.id} place={p} compact/>)}
+        {st.displayed.map(p => <PlaceCard key={p.id} place={p} compact showCity={st.isCrossCity}/>)}
       </div>
     </div>
   )
@@ -181,7 +200,7 @@ function FilterModal({ st, onClose }: { st: MapState; onClose: () => void }) {
       <div className="modal" style={{ maxWidth: 520, padding: 24 }} onClick={e => e.stopPropagation()}>
         <button className="modal__close" onClick={onClose}><I.x size={20}/></button>
         <h3 className="h3" style={{ margin: 0 }}>Filter</h3>
-        <p className="muted" style={{ fontSize: 13, marginTop: 4, marginBottom: 18 }}>Narrow the {st.filtered.length} results.</p>
+        <p className="muted" style={{ fontSize: 13, marginTop: 4, marginBottom: 18 }}>Narrow the {st.displayed.length} results.</p>
         <div className="mono" style={{ marginBottom: 8 }}>Category</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
           <button onClick={() => st.setCat('all')} className={'chip' + (st.activeCat === 'all' ? ' is-on' : '')}>All</button>
@@ -204,7 +223,7 @@ function FilterModal({ st, onClose }: { st: MapState; onClose: () => void }) {
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
           <button onClick={() => { st.setCat('all'); st.setFoodTags([]); st.setQuery('') }} className="btn btn-ghost">Clear all</button>
-          <button onClick={onClose} className="btn btn-primary">Show {st.filtered.length} places</button>
+          <button onClick={onClose} className="btn btn-primary">Show {st.displayed.length} places</button>
         </div>
       </div>
     </div>

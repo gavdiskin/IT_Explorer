@@ -12,9 +12,17 @@ import { PriceMark } from './PriceMark'
 interface PlaceCardProps {
   place: Place
   compact?: boolean
+  showCity?: boolean
 }
 
-export function PlaceCard({ place, compact }: PlaceCardProps) {
+function cityLabel(id: string | undefined) {
+  if (!id) return ''
+  if (id === 'bangkok') return 'Bangkok'
+  if (id === 'phuket') return 'Phuket'
+  return id
+}
+
+export function PlaceCard({ place, compact, showCity }: PlaceCardProps) {
   const savedSet = useUIStore(s => s.savedSet)
   const toggleSave = useUIStore(s => s.toggleSave)
   const cat = CATEGORIES.find(c => c.id === place.category)
@@ -26,7 +34,10 @@ export function PlaceCard({ place, compact }: PlaceCardProps) {
         <Slot tone={place.slot.tone} label={place.slot.label.split(' ')[0]} h={64} style={{ width: 84, flexShrink: 0, padding: 8 }}/>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="place-card__title" style={{ fontSize: 14 }}>{place.name}</div>
-          <div className="place-card__meta">{cat?.label} · {place.area}</div>
+          <div className="place-card__meta">
+            {cat?.label} · {place.area}
+            {showCity && place.city ? ` · ${cityLabel(place.city)}` : ''}
+          </div>
           <div className="place-card__row" style={{ marginTop: 5 }}>
             <StarRating value={place.rating}/>
             <span className="dot-sep"/>
