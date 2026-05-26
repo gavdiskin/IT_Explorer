@@ -336,35 +336,45 @@ async function getToken(): Promise<string | null> {
 export async function adminSaveApp(payload: AppSavePayload): Promise<{ error: string | null }> {
   try {
     const token = await getToken()
-    if (!token) return { error: 'Not authenticated' }
+    if (!token) return { error: 'Not authenticated. Please sign in again.' }
     const res = await fetch('/api/admin/apps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(15000),
     })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      return { error: `HTTP ${res.status}: ${text || res.statusText}` }
+    }
     const json = await res.json()
     return { error: json.error ?? null }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[db] adminSaveApp:', msg)
-    return { error: msg }
+    return { error: msg.includes('abort') ? 'Save timed out after 15s' : msg }
   }
 }
 
 export async function adminDeleteApp(id: string): Promise<{ error: string | null }> {
   try {
     const token = await getToken()
-    if (!token) return { error: 'Not authenticated' }
+    if (!token) return { error: 'Not authenticated. Please sign in again.' }
     const res = await fetch('/api/admin/apps', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ id }),
+      signal: AbortSignal.timeout(15000),
     })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      return { error: `HTTP ${res.status}: ${text || res.statusText}` }
+    }
     const json = await res.json()
     return { error: json.error ?? null }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[db] adminDeleteApp:', msg)
-    return { error: msg }
+    return { error: msg.includes('abort') ? 'Delete timed out after 15s' : msg }
   }
 }

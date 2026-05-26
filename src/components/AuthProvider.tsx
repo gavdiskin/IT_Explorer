@@ -9,17 +9,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = useUIStore(s => s.signIn)
   const signOut = useUIStore(s => s.signOut)
   const loadSaved = useUIStore(s => s.loadSaved)
+  const setAuthReady = useUIStore(s => s.setAuthReady)
 
   useEffect(() => {
-    if (!supabase) return
+    if (!supabase) { setAuthReady(true); return }
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         const role = await fetchUserRole(session.user.id)
         signIn(session.user.id, session.user.email ?? '', role)
         fetchSavedSlugs(session.user.id).then(loadSaved)
+      } else {
+        setAuthReady(true)
       }
-    })
+    }).catch(() => setAuthReady(true))
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
@@ -32,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [signIn, signOut, loadSaved])
+  }, [signIn, signOut, loadSaved, setAuthReady])
 
   return <>{children}</>
 }

@@ -9,7 +9,16 @@ import I from '@/components/ui/icons'
 function AdminShell({ children }: { children: React.ReactNode }) {
   const role = useUIStore(s => s.role)
   const signedIn = useUIStore(s => s.signedIn)
+  const authReady = useUIStore(s => s.authReady)
   const pathname = usePathname()
+
+  if (!authReady) {
+    return (
+      <main style={{ display: 'grid', placeItems: 'center', minHeight: '100dvh', padding: 32 }}>
+        <div style={{ color: 'var(--muted)', fontSize: 14 }}>Loading…</div>
+      </main>
+    )
+  }
 
   if (!signedIn) {
     return (

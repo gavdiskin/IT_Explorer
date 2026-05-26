@@ -13,8 +13,10 @@ interface UIState {
   userEmail: string | null
   role: 'user' | 'admin' | null
   signedIn: boolean
+  authReady: boolean
   signIn: (userId: string, email: string, role: 'user' | 'admin') => void
   signOut: () => void
+  setAuthReady: (v: boolean) => void
 
   drawerOpen: boolean
   setDrawerOpen: (open: boolean) => void
@@ -46,8 +48,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   userEmail: null,
   role: null,
   signedIn: false,
-  signIn: (userId, email, role) => set({ signedIn: true, userId, userEmail: email, role }),
-  signOut: () => set({ signedIn: false, userId: null, userEmail: null, role: null, savedSet: new Set() }),
+  authReady: false,
+  signIn: (userId, email, role) => set({ signedIn: true, userId, userEmail: email, role, authReady: true }),
+  signOut: () => set({ signedIn: false, userId: null, userEmail: null, role: null, savedSet: new Set(), authReady: true }),
+  setAuthReady: (v) => set({ authReady: v }),
 
   drawerOpen: false,
   setDrawerOpen: (drawerOpen) => set({ drawerOpen }),
