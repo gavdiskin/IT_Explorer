@@ -95,4 +95,8 @@ export interface EssentialApp {
   id: string
   name: string
   use: string
+  ios_url?: string
+  android_url?: string
+  icon_char?: string
+  sort_order?: number
 }

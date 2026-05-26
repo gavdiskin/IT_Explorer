@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { GUIDES, ESSENTIAL_APPS } from '@/data'
-import { fetchPublicGuides } from '@/lib/db'
+import { fetchPublicGuides, fetchPublicApps } from '@/lib/db'
 import { SectionHead } from '@/components/ui/SectionHead'
 import I from '@/components/ui/icons'
-import type { Guide } from '@/types'
+import type { Guide, EssentialApp } from '@/types'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -14,8 +14,9 @@ export const metadata: Metadata = {
 }
 
 export default async function GuidesPage() {
-  const dbGuides = await fetchPublicGuides()
+  const [dbGuides, dbApps] = await Promise.all([fetchPublicGuides(), fetchPublicApps()])
   const guides: Guide[] = dbGuides.length > 0 ? dbGuides : GUIDES
+  const apps: EssentialApp[] = dbApps.length > 0 ? dbApps : ESSENTIAL_APPS
 
   const groups: Record<string, Guide[]> = {}
   guides.forEach(g => { (groups[g.area] = groups[g.area] || []).push(g) })
@@ -59,13 +60,31 @@ export default async function GuidesPage() {
 
       <section className="wrap" style={{ marginBottom: 56 }}>
         <SectionHead kicker="Setup" title="Essential apps for Thailand"/>
-        <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-          {ESSENTIAL_APPS.map(app => (
+        <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+          {apps.map(app => (
             <div key={app.id} className="card" style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 14 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: '#C13D2F18', color: 'var(--brand)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16 }}>{app.name[0]}</div>
-              <div>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: '#C13D2F18', color: 'var(--brand)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
+                {app.icon_char || app.name[0]}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{app.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>{app.use}</div>
+                {(app.ios_url || app.android_url) && (
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    {app.ios_url && (
+                      <a href={app.ios_url} target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: '#00000010', color: 'var(--text)', textDecoration: 'none', fontWeight: 500 }}>
+                        App Store
+                      </a>
+                    )}
+                    {app.android_url && (
+                      <a href={app.android_url} target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: '#00000010', color: 'var(--text)', textDecoration: 'none', fontWeight: 500 }}>
+                        Google Play
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}

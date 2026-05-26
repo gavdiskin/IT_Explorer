@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Place, Category, Guide, GuideStep } from '@/types'
+import type { Place, Category, Guide, GuideStep, EssentialApp } from '@/types'
 
 // ── Public types ─────────────────────────────────────────────────────────────
 
@@ -271,5 +271,75 @@ export async function adminUpdateUserRole(userId: string, role: 'user' | 'admin'
   if (!supabase) return { error: 'Not connected' }
   const { error } = await supabase.from('profiles').update({ role }).eq('id', userId)
   if (error) { console.error('[db] adminUpdateUserRole:', error.message); return { error: error.message } }
+  return { error: null }
+}
+
+// ── Essential apps ────────────────────────────────────────────────────────────
+
+export interface AppRow {
+  id: string
+  name: string
+  use_desc: string
+  ios_url: string | null
+  android_url: string | null
+  icon_char: string
+  sort_order: number
+  active: boolean
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowToApp(r: Record<string, any>): EssentialApp {
+  return {
+    id: r.id,
+    name: r.name,
+    use: r.use_desc,
+    ios_url: r.ios_url ?? undefined,
+    android_url: r.android_url ?? undefined,
+    icon_char: r.icon_char ?? undefined,
+    sort_order: r.sort_order ?? 0,
+  }
+}
+
+export async function fetchPublicApps(): Promise<EssentialApp[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('essential_apps').select('*').eq('active', true).order('sort_order')
+  if (error) { console.error('[db] fetchPublicApps:', error.message); return [] }
+  return (data ?? []).map(rowToApp)
+}
+
+export async function adminFetchApps(): Promise<AppRow[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('essential_apps').select('*').order('sort_order')
+  if (error) { console.error('[db] adminFetchApps:', error.message); return [] }
+  return (data ?? []) as AppRow[]
+}
+
+export interface AppSavePayload {
+  id: string
+  name: string
+  use_desc: string
+  ios_url: string | null
+  android_url: string | null
+  icon_char: string
+  sort_order: number
+  active: boolean
+}
+
+export async function adminSaveApp(payload: AppSavePayload): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not connected' }
+  const { error } = await supabase.from('essential_apps').upsert({
+    ...payload,
+    updated_at: new Date().toISOString(),
+  })
+  if (error) { console.error('[db] adminSaveApp:', error.message); return { error: error.message } }
+  return { error: null }
+}
+
+export async function adminDeleteApp(id: string): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not connected' }
+  const { error } = await supabase.from('essential_apps').delete().eq('id', id)
+  if (error) { console.error('[db] adminDeleteApp:', error.message); return { error: error.message } }
   return { error: null }
 }
