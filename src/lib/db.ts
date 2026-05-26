@@ -327,25 +327,44 @@ export interface AppSavePayload {
   active: boolean
 }
 
+async function getToken(): Promise<string | null> {
+  if (!supabase) return null
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.access_token ?? null
+}
+
 export async function adminSaveApp(payload: AppSavePayload): Promise<{ error: string | null }> {
-  if (!supabase) return { error: 'Not connected' }
   try {
-    const { error } = await supabase.from('essential_apps').upsert(
-      { ...payload, updated_at: new Date().toISOString() },
-      { onConflict: 'id' }
-    )
-    if (error) { console.error('[db] adminSaveApp:', error.message); return { error: error.message } }
-    return { error: null }
+    const token = await getToken()
+    if (!token) return { error: 'Not authenticated' }
+    const res = await fetch('/api/admin/apps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    })
+    const json = await res.json()
+    return { error: json.error ?? null }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error('[db] adminSaveApp threw:', msg)
+    console.error('[db] adminSaveApp:', msg)
     return { error: msg }
   }
 }
 
 export async function adminDeleteApp(id: string): Promise<{ error: string | null }> {
-  if (!supabase) return { error: 'Not connected' }
-  const { error } = await supabase.from('essential_apps').delete().eq('id', id)
-  if (error) { console.error('[db] adminDeleteApp:', error.message); return { error: error.message } }
-  return { error: null }
+  try {
+    const token = await getToken()
+    if (!token) return { error: 'Not authenticated' }
+    const res = await fetch('/api/admin/apps', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ id }),
+    })
+    const json = await res.json()
+    return { error: json.error ?? null }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[db] adminDeleteApp:', msg)
+    return { error: msg }
+  }
 }
