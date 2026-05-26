@@ -175,11 +175,21 @@ export async function insertSubmission(payload: SubmissionPayload): Promise<{ er
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
-export async function fetchUserRole(_userId: string): Promise<'user' | 'admin'> {
+export async function fetchUserRole(userId: string): Promise<'user' | 'admin'> {
   if (!supabase) return 'user'
-  const { data, error } = await supabase.rpc('get_my_role')
-  if (error) { console.error('[fetchUserRole]', error.message, error.code); return 'user' }
-  return data === 'admin' ? 'admin' : 'user'
+  try {
+    const result = await Promise.race([
+      supabase.from('profiles').select('role').eq('id', userId).single(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('role-timeout')), 6000)
+      ),
+    ])
+    const { data, error } = result
+    if (error) { console.error('[fetchUserRole]', error.message); return 'user' }
+    return data?.role === 'admin' ? 'admin' : 'user'
+  } catch {
+    return 'user'
+  }
 }
 
 // ── Public guides ─────────────────────────────────────────────────────────────
@@ -329,8 +339,17 @@ export interface AppSavePayload {
 
 async function getToken(): Promise<string | null> {
   if (!supabase) return null
-  const { data: { session } } = await supabase.auth.getSession()
-  return session?.access_token ?? null
+  try {
+    const result = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('auth-timeout')), 6000)
+      ),
+    ])
+    return result.data.session?.access_token ?? null
+  } catch {
+    return null
+  }
 }
 
 export async function adminSaveApp(payload: AppSavePayload): Promise<{ error: string | null }> {
