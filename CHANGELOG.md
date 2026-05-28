@@ -6,6 +6,13 @@ All significant changes to this project are documented here.
 
 ## [Unreleased] — active development on `claude/busy-rubin-5UsMp`
 
+### Recently viewed & stations (DB-backed)
+- `place_views` table: composite PK `(user_id, place_slug)`, `viewed_at`, RLS so users read/write only their own rows, index on `(user_id, viewed_at desc)`
+- Opening a place upserts a view when signed in; `/recently-viewed` shows cross-device history (localStorage when signed out, DB overlay when signed in)
+- `/stations/[slug]` loads nearby places from Supabase via `fetchPlacesByStation` (filtered on `nearest_station`) with static fallback; station metadata stays static reference data
+- Verified `/submit` writes to `user_submissions` end-to-end (public-insert RLS confirmed)
+- README rewritten to match the Next.js 15 + Supabase architecture (was still documenting the old Vite/JSX prototype)
+
 ### Auth & User Accounts
 - Supabase Auth wired end-to-end (email + password, Google OAuth)
 - `AuthProvider` session listener — syncs `signedIn`, `userId`, `userEmail` to Zustand on mount and on every auth state change
@@ -61,10 +68,7 @@ All significant changes to this project are documented here.
 ---
 
 ## Known / Pending
-- Recently viewed tracking (not yet implemented — requires a `place_views` table)
 - User contributions tracking (requires querying `user_submissions` by user)
 - Real photos — `Slot` SVG placeholders remain; Supabase Storage not yet wired
-- `/submit` form — UI exists, backend insert to `user_submissions` not yet wired
-- `/stations/[slug]` — still uses static STATIONS data
 - Language / Notifications settings — UI rows removed pending implementation
 - Email confirmation should be re-enabled before production launch
