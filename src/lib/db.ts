@@ -453,13 +453,14 @@ export interface AdminPlaceRow {
   category_slug: string | null
   status: string
   photos: string[]
+  nearest_station: string | null
 }
 
 export async function adminFetchPlaces(): Promise<AdminPlaceRow[]> {
   if (!supabase) return []
   const { data, error } = await supabase
     .from('places')
-    .select('slug, name, city, area, category_slug, status, photos')
+    .select('slug, name, city, area, category_slug, status, photos, nearest_station')
     .order('name')
   if (error) { console.error('[db] adminFetchPlaces:', error.message); return [] }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -471,6 +472,7 @@ export async function adminFetchPlaces(): Promise<AdminPlaceRow[]> {
     category_slug: r.category_slug ?? null,
     status: r.status ?? 'approved',
     photos: Array.isArray(r.photos) ? r.photos.filter((p: unknown): p is string => typeof p === 'string') : [],
+    nearest_station: r.nearest_station ?? null,
   }))
 }
 
@@ -524,4 +526,153 @@ export async function adminRemovePlacePhoto(slug: string): Promise<{ error: stri
     console.error('[db] adminRemovePlacePhoto:', msg)
     return { error: msg.includes('abort') ? 'Remove timed out after 15s' : msg }
   }
+}
+
+// ── Stations ──────────────────────────────────────────────────────────────────
+
+export interface StationRow {
+  id: string
+  name: string
+  line: string
+  color: string
+  known_for: string
+  city: string
+  sort_order: number
+  active: boolean
+}
+
+export interface StationSavePayload {
+  id: string
+  name: string
+  line: string
+  color: string
+  known_for: string
+  city: string
+  sort_order: number
+  active: boolean
+}
+
+export async function fetchPublicStations(city?: string): Promise<StationRow[]> {
+  if (!supabase) return []
+  let q = supabase.from('stations').select('*').eq('active', true).order('sort_order')
+  if (city) q = q.eq('city', city)
+  const { data, error } = await q
+  if (error) { console.error('[db] fetchPublicStations:', error.message); return [] }
+  return (data ?? []) as StationRow[]
+}
+
+export async function adminFetchStations(): Promise<StationRow[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.from('stations').select('*').order('sort_order')
+  if (error) { console.error('[db] adminFetchStations:', error.message); return [] }
+  return (data ?? []) as StationRow[]
+}
+
+export async function adminSaveStation(payload: StationSavePayload): Promise<{ error: string | null }> {
+  try {
+    const token = await getToken()
+    if (!token) return { error: 'Not authenticated. Please sign in again.' }
+    const res = await fetch('/api/admin/stations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      return { error: `HTTP ${res.status}: ${text || res.statusText}` }
+    }
+    const json = await res.json()
+    return { error: json.error ?? null }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[db] adminSaveStation:', msg)
+    return { error: msg.includes('abort') ? 'Save timed out after 15s' : msg }
+  }
+}
+
+export async function adminDeleteStation(id: string): Promise<{ error: string | null }> {
+  try {
+    const token = await getToken()
+    if (!token) return { error: 'Not authenticated. Please sign in again.' }
+    const res = await fetch('/api/admin/stations', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id }),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      return { error: `HTTP ${res.status}: ${text || res.statusText}` }
+    }
+    const json = await res.json()
+    return { error: json.error ?? null }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[db] adminDeleteStation:', msg)
+    return { error: msg.includes('abort') ? 'Delete timed out after 15s' : msg }
+  }
+}
+
+export async function adminSetPlaceStation(slug: string, stationId: string | null): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not connected' }
+  const { error } = await supabase
+    .from('places')
+    .update({ nearest_station: stationId })
+    .eq('slug', slug)
+  if (error) { console.error('[db] adminSetPlaceStation:', error.message); return { error: error.message } }
+  return { error: null }
+}
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+
+export interface ReportRow {
+  id: number
+  place_slug: string
+  place_name: string | null
+  kind: 'correction' | 'report'
+  message: string
+  contact: string | null
+  submitted_by: string | null
+  status: 'open' | 'resolved' | 'dismissed'
+  created_at: string
+}
+
+export interface ReportPayload {
+  place_slug: string
+  place_name: string
+  kind: 'correction' | 'report'
+  message: string
+  contact?: string
+  submitted_by?: string | null
+}
+
+export async function insertReport(payload: ReportPayload): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not connected' }
+  const { error } = await supabase.from('reports').insert({
+    place_slug: payload.place_slug,
+    place_name: payload.place_name,
+    kind: payload.kind,
+    message: payload.message,
+    contact: payload.contact || null,
+    submitted_by: payload.submitted_by || null,
+  })
+  if (error) { console.error('[db] insertReport:', error.message); return { error: error.message } }
+  return { error: null }
+}
+
+export async function adminFetchReports(status?: string): Promise<ReportRow[]> {
+  if (!supabase) return []
+  let q = supabase.from('reports').select('*').order('created_at', { ascending: false })
+  if (status) q = q.eq('status', status)
+  const { data, error } = await q
+  if (error) { console.error('[db] adminFetchReports:', error.message); return [] }
+  return (data ?? []) as ReportRow[]
+}
+
+export async function adminUpdateReport(id: number, status: 'resolved' | 'dismissed'): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not connected' }
+  const { error } = await supabase.from('reports').update({ status }).eq('id', id)
+  if (error) { console.error('[db] adminUpdateReport:', error.message); return { error: error.message } }
+  return { error: null }
 }

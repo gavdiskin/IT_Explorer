@@ -4,7 +4,7 @@ import { use } from 'react'
 import Link from 'next/link'
 import { useUIStore } from '@/store/ui'
 import { STATIONS } from '@/data'
-import { usePlacesByStation } from '@/hooks/usePlaces'
+import { usePlacesByStation, useStations } from '@/hooks/usePlaces'
 import { PlaceCard } from '@/components/ui/PlaceCard'
 import { SectionHead } from '@/components/ui/SectionHead'
 import I from '@/components/ui/icons'
@@ -13,7 +13,9 @@ export default function StationPage({ params }: { params: Promise<{ slug: string
   const { slug } = use(params)
   const showCannabis = useUIStore(s => s.showCannabis)
   const { places: stationPlaces } = usePlacesByStation(slug)
-  const station = STATIONS.find(s => s.id === slug)
+  const { stations } = useStations()
+  // Live DB station, falling back to the static seed
+  const station = stations.find(s => s.id === slug) ?? STATIONS.find(s => s.id === slug)
 
   if (!station) {
     return (

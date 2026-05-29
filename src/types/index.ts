@@ -46,6 +46,7 @@ export interface Station {
   color: string
   name: string
   knownFor: string
+  city?: string
 }
 
 export interface Scam {

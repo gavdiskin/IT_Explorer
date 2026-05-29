@@ -73,11 +73,17 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         <Link href="/admin/submissions" style={{ ...navItem, background: isActive('/admin/submissions') ? 'var(--bg-2)' : 'transparent', fontWeight: isActive('/admin/submissions') ? 600 : 500 }}>
           <I.send size={16}/> Submissions
         </Link>
+        <Link href="/admin/reports" style={{ ...navItem, background: isActive('/admin/reports') ? 'var(--bg-2)' : 'transparent', fontWeight: isActive('/admin/reports') ? 600 : 500 }}>
+          <I.flag size={16}/> Reports
+        </Link>
         <Link href="/admin/guides" style={{ ...navItem, background: isActive('/admin/guides') ? 'var(--bg-2)' : 'transparent', fontWeight: isActive('/admin/guides') ? 600 : 500 }}>
           <I.book size={16}/> Guides
         </Link>
         <Link href="/admin/places" style={{ ...navItem, background: isActive('/admin/places') ? 'var(--bg-2)' : 'transparent', fontWeight: isActive('/admin/places') ? 600 : 500 }}>
           <I.camera size={16}/> Photos
+        </Link>
+        <Link href="/admin/stations" style={{ ...navItem, background: isActive('/admin/stations') ? 'var(--bg-2)' : 'transparent', fontWeight: isActive('/admin/stations') ? 600 : 500 }}>
+          <I.train size={16}/> Stations
         </Link>
         <Link href="/admin/apps" style={{ ...navItem, background: isActive('/admin/apps') ? 'var(--bg-2)' : 'transparent', fontWeight: isActive('/admin/apps') ? 600 : 500 }}>
           <I.grid size={16}/> Apps

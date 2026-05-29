@@ -1,12 +1,12 @@
 'use client'
 
-import { use, useEffect } from 'react'
+import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useUIStore } from '@/store/ui'
 import { PLACES, CATEGORIES, STATIONS } from '@/data'
 import { usePlace } from '@/hooks/usePlaces'
 import { trackView } from '@/lib/recentlyViewed'
-import { trackPlaceView } from '@/lib/db'
+import { trackPlaceView, insertReport } from '@/lib/db'
 import { PlaceImage } from '@/components/ui/PlaceImage'
 import { PriceMark } from '@/components/ui/PriceMark'
 import { StarRating } from '@/components/ui/StarRating'
@@ -164,14 +164,7 @@ export default function PlacePage({ params }: { params: Promise<{ slug: string }
                 </a>
               </div>
             </div>
-            <div className="card card-flat" style={{ padding: 14, fontSize: 12.5 }}>
-              <div className="mono" style={{ marginBottom: 6 }}>Help us keep this honest</div>
-              <div style={{ marginBottom: 10, color: 'var(--muted)' }}>Got an update? Spotted a closure?</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button className="btn" style={{ flex: 1, justifyContent: 'center' }}><I.flag size={14}/> Correct</button>
-                <button className="btn" style={{ flex: 1, justifyContent: 'center' }}><I.warning size={14}/> Report</button>
-              </div>
-            </div>
+            <ReportCard placeSlug={place.id} placeName={place.name}/>
           </aside>
         </div>
       </section>
@@ -193,6 +186,89 @@ function Fact({ label, value }: { label: string; value: React.ReactNode }) {
     <div className="card" style={{ padding: 14 }}>
       <div className="mono" style={{ marginBottom: 6 }}>{label}</div>
       <div style={{ fontSize: 14, fontWeight: 600 }}>{value}</div>
+    </div>
+  )
+}
+
+function ReportCard({ placeSlug, placeName }: { placeSlug: string; placeName: string }) {
+  const userEmail = useUIStore(s => s.userEmail)
+  const [kind, setKind] = useState<'correction' | 'report' | null>(null)
+  const [message, setMessage] = useState('')
+  const [contact, setContact] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [done, setDone] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  const submit = async () => {
+    if (!message.trim()) return
+    setSubmitting(true); setErr(null)
+    const { error } = await insertReport({
+      place_slug: placeSlug,
+      place_name: placeName,
+      kind: kind!,
+      message: message.trim(),
+      contact: contact.trim() || undefined,
+      submitted_by: userEmail ?? undefined,
+    })
+    setSubmitting(false)
+    if (error) { setErr(error); return }
+    setDone(true)
+  }
+
+  if (done) {
+    return (
+      <div className="card card-flat" style={{ padding: 14, fontSize: 12.5 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#2D6A4F' }}>
+          <I.check size={16}/>
+          <strong>Thanks &mdash; we&apos;ll review this shortly.</strong>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="card card-flat" style={{ padding: 14, fontSize: 12.5 }}>
+      <div className="mono" style={{ marginBottom: 6 }}>Help us keep this honest</div>
+      <div style={{ marginBottom: 10, color: 'var(--muted)' }}>Got an update? Spotted a closure?</div>
+      {kind === null ? (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setKind('correction')}><I.flag size={14}/> Correct</button>
+          <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setKind('report')}><I.warning size={14}/> Report</button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span className="tag" style={{ background: kind === 'correction' ? '#1F6FB420' : '#C13D2F15', color: kind === 'correction' ? '#1F6FB4' : 'var(--brand)', fontSize: 10 }}>
+              {kind === 'correction' ? 'CORRECTION' : 'REPORT'}
+            </span>
+            <button onClick={() => { setKind(null); setMessage(''); setContact(''); setErr(null) }} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--muted)', padding: 0, lineHeight: 1 }}>
+              <I.x size={13}/>
+            </button>
+          </div>
+          <textarea
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            placeholder={kind === 'correction' ? 'What needs updating? (hours, price, info…)' : 'What did you find? (closure, scam, safety issue…)'}
+            rows={3}
+            style={{ width: '100%', resize: 'vertical', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', fontSize: 12.5, fontFamily: 'inherit', color: 'var(--text)', boxSizing: 'border-box' }}
+          />
+          <input
+            value={contact}
+            onChange={e => setContact(e.target.value)}
+            placeholder="Your email (optional, for follow-up)"
+            style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', fontSize: 12, fontFamily: 'inherit', color: 'var(--text)', boxSizing: 'border-box' }}
+          />
+          {err && <div style={{ color: 'var(--brand)', fontSize: 11.5 }}>{err}</div>}
+          <button
+            className="btn btn-primary"
+            onClick={submit}
+            disabled={submitting || !message.trim()}
+            style={{ justifyContent: 'center' }}
+          >
+            {submitting ? 'Sending…' : 'Send'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
