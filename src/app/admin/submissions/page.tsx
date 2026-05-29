@@ -5,6 +5,7 @@ import {
   adminFetchSubmissions, adminUpdateSubmission, adminPromoteSubmission,
   type SubmissionRow, type PromotePayload,
 } from '@/lib/db'
+import { isValidSlug, isCoordInThailand } from '@/lib/validation'
 import { CATEGORIES } from '@/data'
 import I from '@/components/ui/icons'
 
@@ -62,8 +63,9 @@ export default function SubmissionsPage() {
     if (!promote) return
     const latNum = parseFloat(promote.lat)
     const lngNum = parseFloat(promote.lng)
-    if (!promote.slug) { setPromote(p => p && ({ ...p, error: 'Slug is required.' })); return }
+    if (!isValidSlug(promote.slug)) { setPromote(p => p && ({ ...p, error: 'Slug must be lowercase letters, numbers, and single hyphens only.' })); return }
     if (isNaN(latNum) || isNaN(lngNum)) { setPromote(p => p && ({ ...p, error: 'Valid latitude and longitude are required to place this on the map.' })); return }
+    if (!isCoordInThailand(latNum, lngNum)) { setPromote(p => p && ({ ...p, error: 'Coordinates are outside Thailand — check the latitude and longitude.' })); return }
     setPromote(p => p && ({ ...p, saving: true, error: null }))
     const row = promote.row
     const payload: PromotePayload = {
