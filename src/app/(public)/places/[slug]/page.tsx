@@ -7,7 +7,7 @@ import { PLACES, CATEGORIES, STATIONS } from '@/data'
 import { usePlace } from '@/hooks/usePlaces'
 import { trackView } from '@/lib/recentlyViewed'
 import { trackPlaceView } from '@/lib/db'
-import { Slot } from '@/components/ui/Slot'
+import { PlaceImage } from '@/components/ui/PlaceImage'
 import { PriceMark } from '@/components/ui/PriceMark'
 import { StarRating } from '@/components/ui/StarRating'
 import { SectionHead } from '@/components/ui/SectionHead'
@@ -92,7 +92,7 @@ export default function PlacePage({ params }: { params: Promise<{ slug: string }
             )}
           </div>
           <div>
-            <Slot tone={place.slot.tone} label={place.slot.label} sub={place.slot.sub} h={360} tag="HERO IMAGE"/>
+            <PlaceImage src={place.photos?.[0]} alt={place.name} tone={place.slot.tone} label={place.slot.label} sub={place.slot.sub} h={360} tag="HERO IMAGE"/>
           </div>
         </div>
       </section>

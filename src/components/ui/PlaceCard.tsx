@@ -5,7 +5,7 @@ import { useUIStore } from '@/store/ui'
 import { CATEGORIES } from '@/data'
 import type { Place } from '@/types'
 import I from './icons'
-import { Slot } from './Slot'
+import { PlaceImage } from './PlaceImage'
 import { StarRating } from './StarRating'
 import { PriceMark } from './PriceMark'
 
@@ -31,7 +31,7 @@ export function PlaceCard({ place, compact, showCity }: PlaceCardProps) {
   if (compact) {
     return (
       <Link href={`/places/${place.id}`} className="card card-hov" style={{ display: 'flex', gap: 12, padding: 10, alignItems: 'center' }}>
-        <Slot tone={place.slot.tone} label={place.slot.label.split(' ')[0]} h={64} style={{ width: 84, flexShrink: 0, padding: 8 }}/>
+        <PlaceImage src={place.photos?.[0]} alt={place.name} tone={place.slot.tone} label={place.slot.label.split(' ')[0]} h={64} style={{ width: 84, flexShrink: 0, padding: 8 }}/>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="place-card__title" style={{ fontSize: 14 }}>{place.name}</div>
           <div className="place-card__meta">
@@ -60,7 +60,7 @@ export function PlaceCard({ place, compact, showCity }: PlaceCardProps) {
 
   return (
     <Link href={`/places/${place.id}`} className="place-card">
-      <Slot tone={place.slot.tone} label={place.slot.label} sub={place.slot.sub} h={170} tag={cat?.label} style={{ borderRadius: 0 }}/>
+      <PlaceImage src={place.photos?.[0]} alt={place.name} tone={place.slot.tone} label={place.slot.label} sub={place.slot.sub} h={170} tag={cat?.label} style={{ borderRadius: 0 }}/>
       <div className="place-card__body">
         <div className="place-card__title">{place.name}</div>
         <div className="place-card__meta">

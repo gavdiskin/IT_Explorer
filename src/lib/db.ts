@@ -80,6 +80,7 @@ function rowToPlace(r: Record<string, any>): Place {
     coords: [Number(r.lat), Number(r.lng)],
     priceRange: r.price_range_json ?? {},
     optional: r.is_optional ?? false,
+    photos: Array.isArray(r.photos) ? r.photos.filter((p: unknown): p is string => typeof p === 'string') : [],
   }
 }
 
@@ -203,6 +204,18 @@ export async function insertSubmission(payload: SubmissionPayload): Promise<{ er
   })
   if (error) { console.error('[db] insertSubmission:', error.message); return { error: error.message } }
   return { error: null }
+}
+
+// Submissions made by the signed-in user (matched on submitted_by = their email).
+// RLS lets a user read only their own rows, so no extra filtering is needed server-side.
+export async function fetchMySubmissions(email: string): Promise<SubmissionRow[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('user_submissions').select('*')
+    .eq('submitted_by', email)
+    .order('created_at', { ascending: false })
+  if (error) { console.error('[db] fetchMySubmissions:', error.message); return [] }
+  return (data ?? []) as SubmissionRow[]
 }
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
@@ -427,5 +440,88 @@ export async function adminDeleteApp(id: string): Promise<{ error: string | null
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[db] adminDeleteApp:', msg)
     return { error: msg.includes('abort') ? 'Delete timed out after 15s' : msg }
+  }
+}
+
+// ── Admin places (photo management) ────────────────────────────────────────────
+
+export interface AdminPlaceRow {
+  slug: string
+  name: string
+  city: string | null
+  area: string | null
+  category_slug: string | null
+  status: string
+  photos: string[]
+}
+
+export async function adminFetchPlaces(): Promise<AdminPlaceRow[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('places')
+    .select('slug, name, city, area, category_slug, status, photos')
+    .order('name')
+  if (error) { console.error('[db] adminFetchPlaces:', error.message); return [] }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: Record<string, any>) => ({
+    slug: r.slug,
+    name: r.name,
+    city: r.city ?? null,
+    area: r.area ?? null,
+    category_slug: r.category_slug ?? null,
+    status: r.status ?? 'approved',
+    photos: Array.isArray(r.photos) ? r.photos.filter((p: unknown): p is string => typeof p === 'string') : [],
+  }))
+}
+
+// Uploads through a server route (like apps) so the write isn't blocked by
+// ad-blocker extensions that drop direct POSTs to the Supabase domain. The route
+// stores the file in the `place-photos` bucket and saves the public URL on the place.
+export async function adminUploadPlacePhoto(slug: string, file: File): Promise<{ url: string | null; error: string | null }> {
+  try {
+    const token = await getToken()
+    if (!token) return { url: null, error: 'Not authenticated. Please sign in again.' }
+    const fd = new FormData()
+    fd.append('slug', slug)
+    fd.append('file', file)
+    const res = await fetch('/api/admin/places', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+      signal: AbortSignal.timeout(30000),
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      return { url: null, error: `HTTP ${res.status}: ${text || res.statusText}` }
+    }
+    const json = await res.json()
+    return { url: json.url ?? null, error: json.error ?? null }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[db] adminUploadPlacePhoto:', msg)
+    return { url: null, error: msg.includes('abort') ? 'Upload timed out after 30s' : msg }
+  }
+}
+
+export async function adminRemovePlacePhoto(slug: string): Promise<{ error: string | null }> {
+  try {
+    const token = await getToken()
+    if (!token) return { error: 'Not authenticated. Please sign in again.' }
+    const res = await fetch('/api/admin/places', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ slug }),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      return { error: `HTTP ${res.status}: ${text || res.statusText}` }
+    }
+    const json = await res.json()
+    return { error: json.error ?? null }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[db] adminRemovePlacePhoto:', msg)
+    return { error: msg.includes('abort') ? 'Remove timed out after 15s' : msg }
   }
 }

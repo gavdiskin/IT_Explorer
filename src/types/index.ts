@@ -29,6 +29,7 @@ export interface Place {
   coords: [number, number]
   priceRange?: Record<string, string>
   optional?: boolean
+  photos?: string[]
 }
 
 export interface City {

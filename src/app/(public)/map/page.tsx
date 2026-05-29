@@ -7,7 +7,7 @@ import { useUIStore } from '@/store/ui'
 import { CATEGORIES, FOOD_FILTERS, PLACES } from '@/data'
 import { usePlaces } from '@/hooks/usePlaces'
 import { PlaceCard } from '@/components/ui/PlaceCard'
-import { Slot } from '@/components/ui/Slot'
+import { PlaceImage } from '@/components/ui/PlaceImage'
 import { PriceMark } from '@/components/ui/PriceMark'
 import { StarRating } from '@/components/ui/StarRating'
 import { GMap } from '@/components/map/GMap'
@@ -149,7 +149,7 @@ function SelectedPopup({ st, offsetForDrawer }: { st: MapState; offsetForDrawer?
   if (!place) return null
   return (
     <div className="map-popup only-tablet-up" style={{ right: 24, top: 24, left: offsetForDrawer ? 'calc(min(420px, 86vw) + 24px)' : 'auto' }}>
-      <Slot tone={place.slot.tone} label={place.slot.label} sub={place.slot.sub} h={130} style={{ borderRadius: 0 }}/>
+      <PlaceImage src={place.photos?.[0]} alt={place.name} tone={place.slot.tone} label={place.slot.label} sub={place.slot.sub} h={130} style={{ borderRadius: 0 }}/>
       <div style={{ padding: '12px 14px 14px' }}>
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, letterSpacing: '-.01em' }}>{place.name}</div>
         <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{place.subcategory}</div>
