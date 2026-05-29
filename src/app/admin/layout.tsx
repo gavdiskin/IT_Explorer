@@ -12,7 +12,9 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const authReady = useUIStore(s => s.authReady)
   const pathname = usePathname()
 
-  if (!authReady) {
+  // Wait for auth, and (when signed in) for the role lookup to resolve — otherwise
+  // an admin would briefly see the 403 screen before their role loads.
+  if (!authReady || (signedIn && role === null)) {
     return (
       <main style={{ display: 'grid', placeItems: 'center', minHeight: '100dvh', padding: 32 }}>
         <div style={{ color: 'var(--muted)', fontSize: 14 }}>Loading…</div>

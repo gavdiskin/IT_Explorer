@@ -14,8 +14,9 @@ interface UIState {
   role: 'user' | 'admin' | null
   signedIn: boolean
   authReady: boolean
-  signIn: (userId: string, email: string, role: 'user' | 'admin') => void
+  signIn: (userId: string, email: string) => void
   signOut: () => void
+  setRole: (role: 'user' | 'admin') => void
   setAuthReady: (v: boolean) => void
 
   drawerOpen: boolean
@@ -49,8 +50,11 @@ export const useUIStore = create<UIState>((set, get) => ({
   role: null,
   signedIn: false,
   authReady: false,
-  signIn: (userId, email, role) => set({ signedIn: true, userId, userEmail: email, role, authReady: true }),
+  // signIn keeps the existing role: it's set separately by setRole once the
+  // profiles lookup resolves, so background token refreshes don't reset it.
+  signIn: (userId, email) => set({ signedIn: true, userId, userEmail: email, authReady: true }),
   signOut: () => set({ signedIn: false, userId: null, userEmail: null, role: null, savedSet: new Set(), authReady: true }),
+  setRole: (role) => set({ role }),
   setAuthReady: (v) => set({ authReady: v }),
 
   drawerOpen: false,

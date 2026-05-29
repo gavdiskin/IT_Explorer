@@ -6,6 +6,31 @@ All significant changes to this project are documented here.
 
 ## [Unreleased] — active development on `claude/busy-rubin-5UsMp`
 
+### Stay logged in across refreshes (auth fix)
+- Root cause: `onAuthStateChange` was an `async` callback that `await`-ed Supabase
+  calls (`fetchUserRole`, `fetchSavedSlugs`). supabase-js v2 holds an auth lock for
+  the callback, so those calls re-entered the lock and stalled; combined with
+  ad-blocker-blocked token-refresh POSTs, a reload could resolve to a null session
+  and the `else { signOut() }` branch wiped the login
+- `AuthProvider` rewritten: single listener, **synchronous** callback that signs in
+  immediately from the stored session; role + saved places fetched a tick later
+  (outside the lock). Only an explicit `SIGNED_OUT` event clears the session — a
+  blocked/slow refresh no longer logs the user out
+- Supabase client configured explicitly: `persistSession`, `autoRefreshToken`,
+  `detectSessionInUrl`, `flowType: 'pkce'`
+- Store: `role` split out of `signIn` into a `setRole` action so background token
+  refreshes don't reset it; admin layout waits for the role to resolve (no 403 flash)
+
+### Place photos (Supabase Storage)
+- `place-photos` bucket (public read, admin-only writes, 5 MB image cap)
+- `PlaceImage` renders a real photo when set, falls back to the `Slot` placeholder
+- Admin → Photos page: per-place upload / replace / remove via `/api/admin/places`
+- `Place.photos` mapped from the DB; shown on cards, detail hero, and map popup
+
+### My submissions (account page)
+- Account page lists the signed-in user's `user_submissions` with status badges
+- `fetchMySubmissions` + RLS policy letting users read their own submissions
+
 ### Recently viewed & stations (DB-backed)
 - `place_views` table: composite PK `(user_id, place_slug)`, `viewed_at`, RLS so users read/write only their own rows, index on `(user_id, viewed_at desc)`
 - Opening a place upserts a view when signed in; `/recently-viewed` shows cross-device history (localStorage when signed out, DB overlay when signed in)
