@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { isValidSlug, isCoordInThailand } from './validation'
 import type { Place, Category, Guide, GuideStep, EssentialApp } from '@/types'
 
 // ── Public types ─────────────────────────────────────────────────────────────
@@ -229,6 +230,21 @@ export interface PromotePayload {
 
 export async function adminPromoteSubmission(p: PromotePayload): Promise<{ error: string | null }> {
   if (!supabase) return { error: 'Not connected' }
+
+  // Validate before touching the live places table.
+  if (!isValidSlug(p.slug)) {
+    return { error: 'Slug must be lowercase letters, numbers, and single hyphens only (e.g. "anh-kafe").' }
+  }
+  if (!isCoordInThailand(p.lat, p.lng)) {
+    return { error: 'Coordinates are outside Thailand — check the latitude and longitude before publishing.' }
+  }
+
+  // Slug is the place key; refuse to overwrite an existing entry.
+  const { data: existing, error: lookupErr } = await supabase
+    .from('places').select('slug').eq('slug', p.slug).maybeSingle()
+  if (lookupErr) { console.error('[db] adminPromoteSubmission lookup:', lookupErr.message); return { error: lookupErr.message } }
+  if (existing) return { error: `A place with slug "${p.slug}" already exists. Choose a different slug.` }
+
   const { error: insertErr } = await supabase.from('places').insert({
     slug: p.slug,
     name: p.name,

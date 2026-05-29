@@ -7,6 +7,7 @@ import { PLACES, CATEGORIES, STATIONS } from '@/data'
 import { usePlace } from '@/hooks/usePlaces'
 import { trackView } from '@/lib/recentlyViewed'
 import { trackPlaceView, insertReport } from '@/lib/db'
+import { isValidEmail, MAXLEN } from '@/lib/validation'
 import { PlaceImage } from '@/components/ui/PlaceImage'
 import { PriceMark } from '@/components/ui/PriceMark'
 import { StarRating } from '@/components/ui/StarRating'
@@ -201,6 +202,10 @@ function ReportCard({ placeSlug, placeName }: { placeSlug: string; placeName: st
 
   const submit = async () => {
     if (!message.trim()) return
+    if (contact.trim() && !isValidEmail(contact.trim())) {
+      setErr('That email doesn’t look right — fix it or leave it blank.')
+      return
+    }
     setSubmitting(true); setErr(null)
     const { error } = await insertReport({
       place_slug: placeSlug,
@@ -248,13 +253,16 @@ function ReportCard({ placeSlug, placeName }: { placeSlug: string; placeName: st
           <textarea
             value={message}
             onChange={e => setMessage(e.target.value)}
+            maxLength={MAXLEN.reportMessage}
             placeholder={kind === 'correction' ? 'What needs updating? (hours, price, info…)' : 'What did you find? (closure, scam, safety issue…)'}
             rows={3}
             style={{ width: '100%', resize: 'vertical', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', fontSize: 12.5, fontFamily: 'inherit', color: 'var(--text)', boxSizing: 'border-box' }}
           />
           <input
+            type="email"
             value={contact}
             onChange={e => setContact(e.target.value)}
+            maxLength={MAXLEN.email}
             placeholder="Your email (optional, for follow-up)"
             style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', fontSize: 12, fontFamily: 'inherit', color: 'var(--text)', boxSizing: 'border-box' }}
           />

@@ -4,6 +4,7 @@ import { useState, Fragment } from 'react'
 import Link from 'next/link'
 import { useUIStore } from '@/store/ui'
 import { insertSubmission } from '@/lib/db'
+import { isCoordInThailand, MAXLEN } from '@/lib/validation'
 import { CATEGORIES, CITIES } from '@/data'
 import I from '@/components/ui/icons'
 
@@ -23,8 +24,20 @@ export default function SubmitPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [coordError, setCoordError] = useState<string | null>(null)
 
   const set = (k: keyof Form, v: string | number | null) => setForm(f => ({ ...f, [k]: v }))
+
+  // Coordinates are optional, but if either is filled both must be present,
+  // numeric, and inside Thailand. Returns an error string or null.
+  const validateCoords = (): string | null => {
+    const { lat, lng } = form
+    if (lat == null && lng == null) return null
+    if (lat == null || lng == null) return 'Enter both latitude and longitude, or leave both blank.'
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return 'Coordinates must be valid numbers.'
+    if (!isCoordInThailand(lat, lng)) return 'Those coordinates are outside Thailand — double-check the latitude and longitude.'
+    return null
+  }
 
   if (!signedIn) {
     return (
@@ -57,7 +70,16 @@ export default function SubmitPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (step < 3) { setStep(step + 1); return }
+    if (step < 3) {
+      if (step === 2) {
+        const ce = validateCoords()
+        setCoordError(ce)
+        if (ce) return
+      }
+      setStep(step + 1)
+      return
+    }
+    if (validateCoords()) { setStep(2); return }
     setSubmitting(true)
     setSubmitError(null)
     const { error } = await insertSubmission({
@@ -100,7 +122,7 @@ export default function SubmitPage() {
         {step === 1 && <>
           <div className="field">
             <label>Place name *</label>
-            <input className="input" required value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Sang Som Noodles"/>
+            <input className="input" required maxLength={MAXLEN.name} value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Sang Som Noodles"/>
           </div>
           <div className="field">
             <label>Category *</label>
@@ -117,24 +139,24 @@ export default function SubmitPage() {
           </div>
           <div className="field">
             <label>Area / neighbourhood</label>
-            <input className="input" value={form.area} onChange={e => set('area', e.target.value)} placeholder="e.g. Thong Lor"/>
+            <input className="input" maxLength={MAXLEN.area} value={form.area} onChange={e => set('area', e.target.value)} placeholder="e.g. Thong Lor"/>
           </div>
         </>}
 
         {step === 2 && <>
           <div className="field">
             <label>Short description *</label>
-            <textarea className="textarea" required value={form.desc} onChange={e => set('desc', e.target.value)}
+            <textarea className="textarea" required maxLength={MAXLEN.description} value={form.desc} onChange={e => set('desc', e.target.value)}
               placeholder="What's special? What do regulars order? Anything to skip? 2–3 sentences is perfect."/>
-            <div className="hint">No marketing copy please. Honest, specific, useful.</div>
+            <div className="hint">No marketing copy please. Honest, specific, useful. ({form.desc.length}/{MAXLEN.description})</div>
           </div>
           <div className="field">
             <label>Address or Google Maps link</label>
-            <input className="input" value={form.address} onChange={e => set('address', e.target.value)} placeholder="https://maps.google.com/..."/>
+            <input className="input" maxLength={MAXLEN.address} value={form.address} onChange={e => set('address', e.target.value)} placeholder="https://maps.google.com/..."/>
           </div>
           <div className="field">
             <label>Opening hours</label>
-            <input className="input" value={form.hours} onChange={e => set('hours', e.target.value)} placeholder="e.g. Daily 10:00 – 22:00"/>
+            <input className="input" maxLength={MAXLEN.hours} value={form.hours} onChange={e => set('hours', e.target.value)} placeholder="e.g. Daily 10:00 – 22:00"/>
           </div>
           <div className="field">
             <label>Price level</label>
@@ -154,6 +176,11 @@ export default function SubmitPage() {
               <input className="input" type="number" step="any" value={form.lng ?? ''} onChange={e => set('lng', e.target.value ? parseFloat(e.target.value) : null)} placeholder="Longitude (e.g. 100.5018)" style={{ flex: 1 }}/>
             </div>
             <div className="hint">In Google Maps: right-click the place → &quot;What&apos;s here?&quot; → copy the two numbers that appear.</div>
+            {coordError && (
+              <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 8, background: '#C13D2F12', color: 'var(--brand)', fontSize: 12.5 }}>
+                {coordError}
+              </div>
+            )}
           </div>
         </>}
 

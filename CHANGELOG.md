@@ -6,6 +6,19 @@ All significant changes to this project are documented here.
 
 ## [Unreleased] — active development on `claude/busy-rubin-5UsMp`
 
+### Form input validation
+- New `src/lib/validation.ts`: shared helpers (`isValidSlug`, `isCoordInThailand`,
+  `isValidEmail`), a `THAILAND_BOUNDS` box, and a `MAXLEN` map of field length caps
+- Submit form: `maxLength` on name / area / description (with live counter) /
+  address / hours; latitude+longitude validated as a pair and bounds-checked to
+  Thailand before advancing past Step 2 or submitting
+- Report card: `maxLength` on the message; contact field is now `type="email"`
+  and rejected on submit if it isn't a valid address (blank still allowed)
+- Admin → promote submission: slug must match the strict slug format, coords are
+  bounds-checked, and `adminPromoteSubmission` now refuses to overwrite an
+  existing place (slug uniqueness pre-check) — validated client-side for instant
+  feedback and again in the db layer as a backstop
+
 ### Place submission → live map flow
 - Submit form (Step 2) now collects latitude & longitude with in-form
   instructions ("right-click in Google Maps → What's here?"). Review screen
