@@ -6,6 +6,33 @@ All significant changes to this project are documented here.
 
 ## [Unreleased] — active development on `claude/busy-rubin-5UsMp`
 
+### Place submission → live map flow
+- Submit form (Step 2) now collects latitude & longitude with in-form
+  instructions ("right-click in Google Maps → What's here?"). Review screen
+  (Step 3) shows a warning if coordinates are missing so submitters know an
+  editor will need to pin it manually
+- Step 3 adds a required disclosure checkbox: submitters confirm the place is
+  a genuine recommendation, not an ad or self-promotion — form cannot be
+  submitted without it
+- `user_submissions` table gained `lat` / `lng` columns (double precision,
+  nullable) to store contributor-supplied coordinates
+- Admin → Submissions: simple "Approve" button replaced with **Approve &
+  Publish**. Clicking it opens an inline promote form pre-filled with the
+  submission's slug (auto-generated from the name), latitude, and longitude.
+  Confirming calls `adminPromoteSubmission`, which inserts a fully-formed row
+  into the `places` table (status = approved) and marks the submission
+  approved — the place appears on the live map immediately
+- New `adminPromoteSubmission` function in `src/lib/db.ts`; submissions list
+  now shows a green "has coords" / red "no coords" badge per row
+
+### Place detail mini-map zoom
+- The small Google Map on a place detail page now opens centred on the
+  place's exact coordinates at zoom 16, not the city centre
+- New `SelectedFollower` component in `LeafletMapInner` pans & zooms when
+  `selectedId` changes at runtime (covers navigating between places)
+- Initial centre computed from the selected pin's `coords` when `selectedId`
+  is provided, falling back to city view otherwise
+
 ### Language switcher (English / ไทย)
 - Lightweight i18n: `src/lib/i18n.ts` dictionary + `useT()` hook. Translates the UI chrome —
   header nav, search, footer, mobile drawer + bottom nav, profile menu, and the account page
