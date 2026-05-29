@@ -16,11 +16,21 @@ function slugify(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
+const SUGGESTED_TAGS = [
+  'buffet', 'all you can eat', 'rooftop', 'halal', 'vegetarian', 'vegan',
+  'live music', 'cash only', 'BTS nearby', 'MRT nearby', 'late night',
+  'family friendly', 'outdoor seating', 'sea view', 'river view', 'Michelin',
+  'queue expected', 'reservation required', 'pet friendly', 'free wifi',
+  'street food', 'night market', 'floating market', 'cheap eats', 'fine dining',
+]
+
 interface PromoteState {
   row: SubmissionRow
   slug: string
   lat: string
   lng: string
+  tags: string[]
+  tagInput: string
   saving: boolean
   error: string | null
 }
@@ -54,10 +64,21 @@ export default function SubmissionsPage() {
       slug: slugify(row.name),
       lat: row.lat != null ? String(row.lat) : '',
       lng: row.lng != null ? String(row.lng) : '',
+      tags: [],
+      tagInput: '',
       saving: false,
       error: null,
     })
   }
+
+  const addPromoteTag = (raw: string) => {
+    const tag = raw.trim().toLowerCase().replace(/,+$/, '').trim()
+    if (!tag) return
+    setPromote(p => p && p.tags.includes(tag) ? { ...p, tagInput: '' } : p && ({ ...p, tags: [...p.tags, tag], tagInput: '' }))
+  }
+
+  const removePromoteTag = (tag: string) =>
+    setPromote(p => p && ({ ...p, tags: p.tags.filter(t => t !== tag) }))
 
   const handlePromote = async () => {
     if (!promote) return
@@ -81,6 +102,7 @@ export default function SubmissionsPage() {
       price_level: row.price_level ?? 2,
       lat: latNum,
       lng: lngNum,
+      tags: promote.tags,
     }
     const { error } = await adminPromoteSubmission(payload)
     if (error) { setPromote(p => p && ({ ...p, saving: false, error })); return }
@@ -153,6 +175,36 @@ export default function SubmissionsPage() {
                       <div className="field" style={{ margin: 0, flex: 1 }}>
                         <label style={{ fontSize: 12 }}>Longitude *</label>
                         <input className="input" type="number" step="any" value={promote.lng} onChange={e => setPromote(p => p && ({ ...p, lng: e.target.value }))} placeholder="100.5018" style={{ fontSize: 13 }}/>
+                      </div>
+                    </div>
+                    <div className="field" style={{ margin: 0 }}>
+                      <label style={{ fontSize: 12 }}>Search tags <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(optional)</span></label>
+                      <div
+                        style={{ display: 'flex', flexWrap: 'wrap', gap: 5, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', cursor: 'text', minHeight: 38 }}
+                        onClick={e => (e.currentTarget.querySelector('input') as HTMLInputElement | null)?.focus()}
+                      >
+                        {promote.tags.map(t => (
+                          <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 7px', borderRadius: 999, background: 'var(--bg-deep)', color: 'var(--text-on-deep)', fontSize: 11.5, fontWeight: 500 }}>
+                            {t}
+                            <button type="button" onClick={e => { e.stopPropagation(); removePromoteTag(t) }} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'inherit', padding: 0, lineHeight: 1, display: 'flex' }} aria-label={`Remove ${t}`}><I.x size={10}/></button>
+                          </span>
+                        ))}
+                        <input
+                          value={promote.tagInput}
+                          onChange={e => setPromote(p => p && ({ ...p, tagInput: e.target.value }))}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addPromoteTag(promote.tagInput) }
+                            if (e.key === 'Backspace' && promote.tagInput === '' && promote.tags.length > 0) removePromoteTag(promote.tags[promote.tags.length - 1])
+                          }}
+                          onBlur={() => { if (promote.tagInput.trim()) addPromoteTag(promote.tagInput) }}
+                          placeholder={promote.tags.length === 0 ? 'e.g. buffet, rooftop, halal…' : ''}
+                          style={{ border: 0, outline: 'none', background: 'transparent', fontSize: 12, color: 'var(--text)', fontFamily: 'inherit', flex: 1, minWidth: 100 }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                        {SUGGESTED_TAGS.filter(s => !promote.tags.includes(s)).slice(0, 12).map(s => (
+                          <button key={s} type="button" onClick={() => addPromoteTag(s)} className="chip" style={{ fontSize: 11, padding: '2px 7px' }}>+ {s}</button>
+                        ))}
                       </div>
                     </div>
                     {promote.error && <div style={{ fontSize: 12, color: 'var(--brand)' }}>{promote.error}</div>}

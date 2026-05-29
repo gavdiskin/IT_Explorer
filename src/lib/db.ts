@@ -226,6 +226,7 @@ export interface PromotePayload {
   price_level: number
   lat: number
   lng: number
+  tags: string[]
 }
 
 export async function adminPromoteSubmission(p: PromotePayload): Promise<{ error: string | null }> {
@@ -263,7 +264,7 @@ export async function adminPromoteSubmission(p: PromotePayload): Promise<{ error
     is_open: true,
     is_optional: false,
     photos: [],
-    tags_array: [],
+    tags_array: p.tags,
     tips_array: [],
     price_range_json: {},
     slot_tone: 'cream',
@@ -525,13 +526,14 @@ export interface AdminPlaceRow {
   status: string
   photos: string[]
   nearest_station: string | null
+  tags: string[]
 }
 
 export async function adminFetchPlaces(): Promise<AdminPlaceRow[]> {
   if (!supabase) return []
   const { data, error } = await supabase
     .from('places')
-    .select('slug, name, city, area, category_slug, status, photos, nearest_station')
+    .select('slug, name, city, area, category_slug, status, photos, nearest_station, tags_array')
     .order('name')
   if (error) { console.error('[db] adminFetchPlaces:', error.message); return [] }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -544,7 +546,18 @@ export async function adminFetchPlaces(): Promise<AdminPlaceRow[]> {
     status: r.status ?? 'approved',
     photos: Array.isArray(r.photos) ? r.photos.filter((p: unknown): p is string => typeof p === 'string') : [],
     nearest_station: r.nearest_station ?? null,
+    tags: Array.isArray(r.tags_array) ? r.tags_array.filter((t: unknown): t is string => typeof t === 'string') : [],
   }))
+}
+
+export async function adminSavePlaceTags(slug: string, tags: string[]): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not connected' }
+  const { error } = await supabase
+    .from('places')
+    .update({ tags_array: tags })
+    .eq('slug', slug)
+  if (error) { console.error('[db] adminSavePlaceTags:', error.message); return { error: error.message } }
+  return { error: null }
 }
 
 // Uploads through a server route (like apps) so the write isn't blocked by
