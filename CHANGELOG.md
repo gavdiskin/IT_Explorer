@@ -6,6 +6,90 @@ All significant changes to this project are documented here.
 
 ## [Unreleased] — active development on `claude/busy-rubin-5UsMp`
 
+### Place submission → live map flow
+- Submit form (Step 2) now collects latitude & longitude with in-form
+  instructions ("right-click in Google Maps → What's here?"). Review screen
+  (Step 3) shows a warning if coordinates are missing so submitters know an
+  editor will need to pin it manually
+- Step 3 adds a required disclosure checkbox: submitters confirm the place is
+  a genuine recommendation, not an ad or self-promotion — form cannot be
+  submitted without it
+- `user_submissions` table gained `lat` / `lng` columns (double precision,
+  nullable) to store contributor-supplied coordinates
+- Admin → Submissions: simple "Approve" button replaced with **Approve &
+  Publish**. Clicking it opens an inline promote form pre-filled with the
+  submission's slug (auto-generated from the name), latitude, and longitude.
+  Confirming calls `adminPromoteSubmission`, which inserts a fully-formed row
+  into the `places` table (status = approved) and marks the submission
+  approved — the place appears on the live map immediately
+- New `adminPromoteSubmission` function in `src/lib/db.ts`; submissions list
+  now shows a green "has coords" / red "no coords" badge per row
+
+### Place detail mini-map zoom
+- The small Google Map on a place detail page now opens centred on the
+  place's exact coordinates at zoom 16, not the city centre
+- New `SelectedFollower` component in `LeafletMapInner` pans & zooms when
+  `selectedId` changes at runtime (covers navigating between places)
+- Initial centre computed from the selected pin's `coords` when `selectedId`
+  is provided, falling back to city view otherwise
+
+### Language switcher (English / ไทย)
+- Lightweight i18n: `src/lib/i18n.ts` dictionary + `useT()` hook. Translates the UI chrome —
+  header nav, search, footer, mobile drawer + bottom nav, profile menu, and the account page
+- Preference persists in localStorage; `LangProvider` restores it after mount and sets
+  `<html lang>`. Store defaults to English so the server and first client render match (no
+  hydration mismatch); it flips to the saved language a tick later
+- Switcher lives on the account page (Settings) and in the mobile drawer
+- Scope: the static interface only — place/guide content comes from the DB and stays in its
+  source language. Adding a language = adding one dictionary object
+
+### Stations management & working reports
+- **Admin → Stations**: full CRUD (name / line / colour / known-for / sort / active) with a
+  colour picker, plus a **place → station assignment** panel — an auto-saving dropdown on every
+  place that sets its `nearest_station`. Fills the gap where stations/assignments were code-only
+- `stations` table seeded with the original 15; transport + station pages now read it live
+  (static `STATIONS` seed remains the fallback), so admin-added stations appear immediately
+- **Admin → Reports**: triage queue (open / resolved / dismissed). The place-page
+  "Correct"/"Report" buttons — previously dead — now open an inline form and write to a new
+  `reports` table
+- Architecture note: a place links to a station via a manually-set `nearest_station` text
+  field, not GPS proximity
+
+### Database cleanup & hardening
+- Dropped 3 unused empty tables (`subcategories`, `tags`, `place_tags`) — leftovers from an
+  abandoned normalized schema; the app uses denormalized columns on `places`
+  (`subcategory`, `tags_array`). `admin_emails` kept — the signup trigger reads it
+- Removed a duplicate index and duplicate / overly-broad RLS policies; wrapped `auth.*()` and
+  `get_my_role()` in scalar subqueries so they evaluate once per query, not per row
+  (performance advisories 198 → ~55, security 14 → 10)
+- Pinned `search_path` on `update_updated_at` / `handle_new_user`, revoked public RPC execute
+  on `handle_new_user`, added the missing covering index on `saved_places.place_slug`
+
+### Stay logged in across refreshes (auth fix)
+- Root cause: `onAuthStateChange` was an `async` callback that `await`-ed Supabase
+  calls (`fetchUserRole`, `fetchSavedSlugs`). supabase-js v2 holds an auth lock for
+  the callback, so those calls re-entered the lock and stalled; combined with
+  ad-blocker-blocked token-refresh POSTs, a reload could resolve to a null session
+  and the `else { signOut() }` branch wiped the login
+- `AuthProvider` rewritten: single listener, **synchronous** callback that signs in
+  immediately from the stored session; role + saved places fetched a tick later
+  (outside the lock). Only an explicit `SIGNED_OUT` event clears the session — a
+  blocked/slow refresh no longer logs the user out
+- Supabase client configured explicitly: `persistSession`, `autoRefreshToken`,
+  `detectSessionInUrl`, `flowType: 'pkce'`
+- Store: `role` split out of `signIn` into a `setRole` action so background token
+  refreshes don't reset it; admin layout waits for the role to resolve (no 403 flash)
+
+### Place photos (Supabase Storage)
+- `place-photos` bucket (public read, admin-only writes, 5 MB image cap)
+- `PlaceImage` renders a real photo when set, falls back to the `Slot` placeholder
+- Admin → Photos page: per-place upload / replace / remove via `/api/admin/places`
+- `Place.photos` mapped from the DB; shown on cards, detail hero, and map popup
+
+### My submissions (account page)
+- Account page lists the signed-in user's `user_submissions` with status badges
+- `fetchMySubmissions` + RLS policy letting users read their own submissions
+
 ### Recently viewed & stations (DB-backed)
 - `place_views` table: composite PK `(user_id, place_slug)`, `viewed_at`, RLS so users read/write only their own rows, index on `(user_id, viewed_at desc)`
 - Opening a place upserts a view when signed in; `/recently-viewed` shows cross-device history (localStorage when signed out, DB overlay when signed in)
@@ -68,7 +152,9 @@ All significant changes to this project are documented here.
 ---
 
 ## Known / Pending
-- User contributions tracking (requires querying `user_submissions` by user)
-- Real photos — `Slot` SVG placeholders remain; Supabase Storage not yet wired
-- Language / Notifications settings — UI rows removed pending implementation
-- Email confirmation should be re-enabled before production launch
+- Notifications settings — UI row still to be built (needs a delivery decision: email / in-app)
+- Share button on place pages is not wired up yet
+- Photos: storage + admin tooling are ready (`/admin/places`); the 45 places still need real
+  images uploaded
+- Language: only UI chrome is translated; DB-driven place/guide content is not localised
+- Pre-launch: re-enable email confirmation + leaked-password protection (Supabase dashboard)

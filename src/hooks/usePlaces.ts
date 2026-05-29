@@ -1,8 +1,12 @@
 'use client'
 import { useState, useEffect } from 'react'
-import type { Place, Category } from '@/types'
-import { fetchPlaces, fetchPlace, fetchPlacesByStation, fetchCategories } from '@/lib/db'
-import { PLACES, CATEGORIES } from '@/data'
+import type { Place, Category, Station } from '@/types'
+import { fetchPlaces, fetchPlace, fetchPlacesByStation, fetchCategories, fetchPublicStations, type StationRow } from '@/lib/db'
+import { PLACES, CATEGORIES, STATIONS } from '@/data'
+
+function rowToStation(r: StationRow): Station {
+  return { id: r.id, name: r.name, line: r.line, color: r.color, knownFor: r.known_for, city: r.city }
+}
 
 export function usePlaces(city: string) {
   const [places, setPlaces] = useState<Place[]>(() => PLACES.filter(p => p.city === city))
@@ -90,5 +94,21 @@ export function useCategories() {
   }, [])
 
   return { categories, loading }
+}
+
+export function useStations(city?: string) {
+  const fallback = city ? STATIONS.filter(s => !s.city || s.city === city) : STATIONS
+  const [stations, setStations] = useState<Station[]>(() => fallback)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchPublicStations(city).then(rows => {
+      if (!cancelled) setStations(rows.length > 0 ? rows.map(rowToStation) : fallback)
+    }).catch(() => { if (!cancelled) setStations(fallback) })
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [city])
+
+  return { stations }
 }
 

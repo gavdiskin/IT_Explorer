@@ -81,5 +81,7 @@ I.check     = (p={}) => wrap(<><path d="M5 12l5 5L19 7"/></>, p)
 I.users     = (p={}) => wrap(<><circle cx="9" cy="7" r="4"/><path d="M3 21a6 6 0 0 1 12 0"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21a6 6 0 0 0-9-5.18"/></>, p)
 I.edit      = (p={}) => wrap(<><path d="M4 20h4l11-11-4-4L4 16z"/><path d="m15 5 4 4"/></>, p)
 I.trash     = (p={}) => wrap(<><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12h12l1-12"/><path d="M9 7V4h6v3"/></>, p)
+I.camera    = (p={}) => wrap(<><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></>, p)
+I.image     = (p={}) => wrap(<><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></>, p)
 
 export default I

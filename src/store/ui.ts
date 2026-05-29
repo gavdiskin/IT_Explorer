@@ -1,9 +1,13 @@
 import { create } from 'zustand'
 import { upsertSaved, deleteSaved } from '@/lib/db'
+import type { Lang } from '@/lib/i18n'
 
 interface UIState {
   city: string
   setCity: (city: string) => void
+
+  lang: Lang
+  setLang: (lang: Lang) => void
 
   savedSet: Set<string>
   toggleSave: (id: string) => void
@@ -14,8 +18,9 @@ interface UIState {
   role: 'user' | 'admin' | null
   signedIn: boolean
   authReady: boolean
-  signIn: (userId: string, email: string, role: 'user' | 'admin') => void
+  signIn: (userId: string, email: string) => void
   signOut: () => void
+  setRole: (role: 'user' | 'admin') => void
   setAuthReady: (v: boolean) => void
 
   drawerOpen: boolean
@@ -28,6 +33,17 @@ interface UIState {
 export const useUIStore = create<UIState>((set, get) => ({
   city: 'bangkok',
   setCity: (city) => set({ city }),
+
+  // Defaults to 'en' on both server and first client render (so there's no
+  // hydration mismatch); LangProvider restores the saved choice after mount.
+  lang: 'en',
+  setLang: (lang) => {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('lang', lang) } catch { /* ignore */ }
+      document.documentElement.lang = lang
+    }
+    set({ lang })
+  },
 
   savedSet: new Set<string>(),
   toggleSave: (id) => {
@@ -49,8 +65,11 @@ export const useUIStore = create<UIState>((set, get) => ({
   role: null,
   signedIn: false,
   authReady: false,
-  signIn: (userId, email, role) => set({ signedIn: true, userId, userEmail: email, role, authReady: true }),
+  // signIn keeps the existing role: it's set separately by setRole once the
+  // profiles lookup resolves, so background token refreshes don't reset it.
+  signIn: (userId, email) => set({ signedIn: true, userId, userEmail: email, authReady: true }),
   signOut: () => set({ signedIn: false, userId: null, userEmail: null, role: null, savedSet: new Set(), authReady: true }),
+  setRole: (role) => set({ role }),
   setAuthReady: (v) => set({ authReady: v }),
 
   drawerOpen: false,
