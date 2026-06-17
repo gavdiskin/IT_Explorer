@@ -6,6 +6,24 @@ All significant changes to this project are documented here.
 
 ## [Unreleased] — active development on `claude/busy-rubin-5UsMp`
 
+### Database security hardening (audit 2026-06-16, fixes #1–#3)
+- **CRITICAL — privilege escalation closed**: dropped the `Users update own profile`
+  RLS policy on `public.profiles`. It allowed any authenticated user to `UPDATE` their
+  own row — including the `role` column — and self-promote to `admin` with a single
+  `PATCH /rest/v1/profiles?id=eq.<own-uuid>` carrying `{"role":"admin"}`. Admin role
+  management is unaffected (covered by the separate `Admin update profiles` policy).
+  Verified: a simulated normal user now updates 0 rows (was 1 before the fix); a
+  simulated admin still updates 1 row
+- **HIGH — anon EXECUTE revoked on two admin-only `SECURITY DEFINER` functions**:
+  `get_push_subscriptions_for_email(text)` and `get_users_with_roles()` are only ever
+  called from authenticated admin sessions. Revoked the `PUBLIC` EXECUTE grant (anon
+  inherited access via `PUBLIC`, so revoking from `anon` alone was insufficient).
+  `authenticated` and `service_role` keep their explicit grants. `get_my_role()` was
+  left callable by anon — it is required by RLS policy expressions. Verified: anon
+  EXECUTE is now `false` on both; authenticated/service_role remain `true`
+- Migrations: `supabase/migrations/20260617062632_*.sql` and `…062734_*.sql`
+  (this repo's first checked-in migration files)
+
 ### Share button & lint cleanup
 - **Share button** on every place detail page: on mobile triggers the native OS share sheet
   (covers WhatsApp, Instagram, Snapchat, TikTok, iMessage — any installed app). On desktop
