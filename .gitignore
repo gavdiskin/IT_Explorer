@@ -34,3 +34,6 @@ next-env.d.ts
 # Editor
 .vscode/
 .idea/
+
+# Security audit reports — contain exploit detail for unpatched issues; keep local only
+SECURITY_AUDIT*.txt
