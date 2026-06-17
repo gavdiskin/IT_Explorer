@@ -237,6 +237,7 @@ export interface PromotePayload {
   lat: number
   lng: number
   tags: string[]
+  submittedBy?: string
 }
 
 export async function adminPromoteSubmission(p: PromotePayload): Promise<{ error: string | null }> {
@@ -285,6 +286,14 @@ export async function adminPromoteSubmission(p: PromotePayload): Promise<{ error
   const { error: updateErr } = await supabase
     .from('user_submissions').update({ status: 'approved' }).eq('id', p.submissionId)
   if (updateErr) console.error('[db] adminPromoteSubmission update:', updateErr.message)
+  if (p.submittedBy) {
+    void sendPushNotification(
+      p.submittedBy,
+      'Your place is live!',
+      `"${p.name}" has been approved and is now on the Inside Thailand map.`,
+      `/places/${p.slug}`
+    )
+  }
   return { error: null }
 }
 
@@ -388,10 +397,17 @@ export async function adminFetchSubmissions(status?: string): Promise<Submission
   return (data ?? []) as SubmissionRow[]
 }
 
-export async function adminUpdateSubmission(id: number, status: 'approved' | 'rejected'): Promise<{ error: string | null }> {
+export async function adminUpdateSubmission(id: number, status: 'approved' | 'rejected', submittedBy?: string): Promise<{ error: string | null }> {
   if (!supabase) return { error: 'Not connected' }
   const { error } = await supabase.from('user_submissions').update({ status }).eq('id', id)
   if (error) { console.error('[db] adminUpdateSubmission:', error.message); return { error: error.message } }
+  if (submittedBy) {
+    const title = status === 'approved' ? 'Submission approved!' : 'Submission update'
+    const body  = status === 'approved'
+      ? 'Your place has been approved and is now live on the map.'
+      : 'Your place submission was not approved this time.'
+    void sendPushNotification(submittedBy, title, body, '/account')
+  }
   return { error: null }
 }
 
@@ -462,6 +478,19 @@ export interface AppSavePayload {
   icon_char: string
   sort_order: number
   active: boolean
+}
+
+async function sendPushNotification(email: string, title: string, body: string, url = '/'): Promise<void> {
+  try {
+    const token = await getToken()
+    if (!token) return
+    await fetch('/api/push/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ email, title, body, url }),
+      signal: AbortSignal.timeout(8000),
+    })
+  } catch { /* fire-and-forget — notification failure must not block the main action */ }
 }
 
 async function getToken(): Promise<string | null> {
@@ -764,9 +793,16 @@ export async function adminFetchReports(status?: string): Promise<ReportRow[]> {
   return (data ?? []) as ReportRow[]
 }
 
-export async function adminUpdateReport(id: number, status: 'resolved' | 'dismissed'): Promise<{ error: string | null }> {
+export async function adminUpdateReport(id: number, status: 'resolved' | 'dismissed', submittedBy?: string): Promise<{ error: string | null }> {
   if (!supabase) return { error: 'Not connected' }
   const { error } = await supabase.from('reports').update({ status }).eq('id', id)
   if (error) { console.error('[db] adminUpdateReport:', error.message); return { error: error.message } }
+  if (submittedBy) {
+    const title = status === 'resolved' ? 'Report actioned' : 'Report update'
+    const body  = status === 'resolved'
+      ? 'Your correction or report has been reviewed and resolved — thank you!'
+      : 'Your report has been reviewed. No further action was needed this time.'
+    void sendPushNotification(submittedBy, title, body, '/account')
+  }
   return { error: null }
 }

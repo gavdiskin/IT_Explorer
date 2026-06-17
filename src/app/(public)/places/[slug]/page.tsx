@@ -13,6 +13,7 @@ import { PriceMark } from '@/components/ui/PriceMark'
 import { StarRating } from '@/components/ui/StarRating'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { PlaceCard } from '@/components/ui/PlaceCard'
+import { ShareButton } from '@/components/ui/ShareButton'
 import { GMap } from '@/components/map/GMap'
 import I from '@/components/ui/icons'
 
@@ -101,7 +102,7 @@ export default function PlacePage({ params }: { params: Promise<{ slug: string }
               <button className="btn btn-lg" onClick={() => toggleSave(place.id)}>
                 {saved ? <><I.bookmarkFill size={16}/> Saved</> : <><I.bookmark size={16}/> Save</>}
               </button>
-              <button className="btn btn-lg"><I.share size={16}/> Share</button>
+              <ShareButton title={place.name}/>
             </div>
             {!signedIn && (
               <div style={{ marginTop: 12, color: 'var(--muted)', fontSize: 12 }}>

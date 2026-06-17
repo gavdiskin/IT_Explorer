@@ -14,6 +14,15 @@ import { StarRating } from '@/components/ui/StarRating'
 import { GMap } from '@/components/map/GMap'
 import I from '@/components/ui/icons'
 
+type AnyPlace = { name: string; subcategory: string; area: string; category: string; tags?: string[]; cuisine?: string[] }
+function textMatch<T extends AnyPlace>(places: T[], q: string): T[] {
+  const lq = q.toLowerCase()
+  return places.filter(p => [
+    p.name, p.subcategory, p.area, p.category, ...(p.tags || []), ...(p.cuisine || []),
+    (CATEGORIES.find(c => c.id === p.category) || {}).label || '',
+  ].join(' ').toLowerCase().includes(lq))
+}
+
 export default function MapPage() {
   return (
     <Suspense>
@@ -39,14 +48,6 @@ function useMapState(initialQuery: string, initialCategory: string) {
   const [openFilters, setOpenFilters] = useState(false)
 
   const all = cityPlaces.filter(p => !p.optional || showCannabis)
-
-  function textMatch(places: typeof all, q: string) {
-    const lq = q.toLowerCase()
-    return places.filter(p => [
-      p.name, p.subcategory, p.area, p.category, ...(p.tags || []), ...(p.cuisine || []),
-      (CATEGORIES.find(c => c.id === p.category) || {}).label || '',
-    ].join(' ').toLowerCase().includes(lq))
-  }
 
   const filtered = useMemo(() => {
     let r = all
@@ -75,9 +76,10 @@ function MapFloating({ urlQuery, initialCat }: { urlQuery: string; initialCat: s
   const st = useMapState(urlQuery, initialCat)
   const city = useUIStore(s => s.city)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const { setQuery } = st
 
   // Keep map search in sync when the Header search bar pushes a new ?q= to the URL
-  useEffect(() => { st.setQuery(urlQuery) }, [urlQuery, st.setQuery])
+  useEffect(() => { setQuery(urlQuery) }, [urlQuery, setQuery])
 
   return (
     <main className="map-page route-mount">

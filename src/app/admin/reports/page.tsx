@@ -28,10 +28,10 @@ export default function ReportsPage() {
 
   useEffect(() => { load(tab) }, [tab])
 
-  const handle = async (id: number, status: 'resolved' | 'dismissed') => {
-    setActing(id)
-    await adminUpdateReport(id, status)
-    setRows(r => r.filter(x => x.id !== id))
+  const handle = async (row: ReportRow, status: 'resolved' | 'dismissed') => {
+    setActing(row.id)
+    await adminUpdateReport(row.id, status, row.submitted_by ?? undefined)
+    setRows(r => r.filter(x => x.id !== row.id))
     setActing(null)
   }
 
@@ -89,7 +89,7 @@ export default function ReportsPage() {
                     <button
                       className="btn btn-primary"
                       disabled={acting === row.id}
-                      onClick={() => handle(row.id, 'resolved')}
+                      onClick={() => handle(row, 'resolved')}
                       style={{ gap: 6, background: '#2D6A4F' }}
                     >
                       <I.check size={15}/> Resolve
@@ -97,7 +97,7 @@ export default function ReportsPage() {
                     <button
                       className="btn"
                       disabled={acting === row.id}
-                      onClick={() => handle(row.id, 'dismissed')}
+                      onClick={() => handle(row, 'dismissed')}
                       style={{ gap: 6, color: 'var(--muted)' }}
                     >
                       <I.x size={15}/> Dismiss

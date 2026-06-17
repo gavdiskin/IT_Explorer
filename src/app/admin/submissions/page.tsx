@@ -51,10 +51,10 @@ export default function SubmissionsPage() {
 
   useEffect(() => { load(tab) }, [tab])
 
-  const handleReject = async (id: number) => {
-    setUpdating(id)
-    await adminUpdateSubmission(id, 'rejected')
-    setRows(r => r.filter(x => x.id !== id))
+  const handleReject = async (row: SubmissionRow) => {
+    setUpdating(row.id)
+    await adminUpdateSubmission(row.id, 'rejected', row.submitted_by ?? undefined)
+    setRows(r => r.filter(x => x.id !== row.id))
     setUpdating(null)
   }
 
@@ -103,6 +103,7 @@ export default function SubmissionsPage() {
       lat: latNum,
       lng: lngNum,
       tags: promote.tags,
+      submittedBy: row.submitted_by ?? undefined,
     }
     const { error } = await adminPromoteSubmission(payload)
     if (error) { setPromote(p => p && ({ ...p, saving: false, error })); return }
@@ -231,7 +232,7 @@ export default function SubmissionsPage() {
                   <button
                     className="btn"
                     disabled={updating === row.id}
-                    onClick={() => handleReject(row.id)}
+                    onClick={() => handleReject(row)}
                     style={{ gap: 6, color: 'var(--brand)' }}
                   >
                     <I.x size={15}/> Reject

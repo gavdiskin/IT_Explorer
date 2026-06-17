@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useUIStore } from '@/store/ui'
 import { useT } from '@/hooks/useT'
 import { LANGS, type Lang } from '@/lib/i18n'
 import { supabase } from '@/lib/supabase'
 import { fetchMySubmissions, type SubmissionRow } from '@/lib/db'
+import { registerSW, subscribeToPush, getPushSubscription, serializeSubscription } from '@/lib/webPush'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { CITIES } from '@/data'
 import I from '@/components/ui/icons'
@@ -36,6 +37,11 @@ export default function AccountPage() {
   const [submissions, setSubmissions] = useState<SubmissionRow[]>([])
   const [subsLoading, setSubsLoading] = useState(false)
 
+  // Push notification state
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushSupported, setPushSupported] = useState(false)
+  const [pushBusy, setPushBusy] = useState(false)
+
   useEffect(() => {
     if (!signedIn || !userEmail) return
     setSubsLoading(true)
@@ -44,6 +50,68 @@ export default function AccountPage() {
       setSubsLoading(false)
     })
   }, [signedIn, userEmail])
+
+  // Check current push subscription state on mount
+  useEffect(() => {
+    if (!signedIn) return
+    const check = async () => {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+      setPushSupported(true)
+      const reg = await navigator.serviceWorker.register('/sw.js').catch(() => null)
+      if (!reg) return
+      const sub = await reg.pushManager.getSubscription()
+      setPushEnabled(!!sub)
+    }
+    check()
+  }, [signedIn])
+
+  const getToken = useCallback(async () => {
+    if (!supabase) return null
+    const { data } = await supabase.auth.getSession()
+    return data.session?.access_token ?? null
+  }, [])
+
+  const handlePushToggle = async () => {
+    if (pushBusy) return
+    setPushBusy(true)
+    try {
+      const reg = await registerSW()
+      if (!reg) { setPushBusy(false); return }
+
+      if (pushEnabled) {
+        const sub = await getPushSubscription(reg)
+        if (sub) {
+          const token = await getToken()
+          if (token) {
+            await fetch('/api/push/subscribe', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ endpoint: sub.endpoint }),
+            })
+          }
+          await sub.unsubscribe()
+        }
+        setPushEnabled(false)
+      } else {
+        const permission = await Notification.requestPermission()
+        if (permission !== 'granted') { setPushBusy(false); return }
+        const sub = await subscribeToPush(reg)
+        if (!sub) { setPushBusy(false); return }
+        const token = await getToken()
+        if (token) {
+          const { endpoint, p256dh, auth } = serializeSubscription(sub)
+          await fetch('/api/push/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ endpoint, p256dh, auth }),
+          })
+        }
+        setPushEnabled(true)
+      }
+    } finally {
+      setPushBusy(false)
+    }
+  }
 
   if (!signedIn) {
     return (
@@ -140,7 +208,7 @@ export default function AccountPage() {
             </select>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 18px', alignItems: 'center', fontSize: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--line)', alignItems: 'center', fontSize: 14 }}>
             <div>
               <div>{t('account.showCannabis')}</div>
               <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{t('account.cannabisHint')}</div>
@@ -161,6 +229,34 @@ export default function AccountPage() {
               }}/>
             </button>
           </div>
+
+          {pushSupported && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 18px', alignItems: 'center', fontSize: 14 }}>
+              <div>
+                <div>Push notifications</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+                  {pushEnabled ? 'On — submission updates & report replies' : 'Get notified when a submission is approved or a report is resolved'}
+                </div>
+              </div>
+              <button
+                onClick={handlePushToggle}
+                disabled={pushBusy}
+                style={{
+                  width: 44, height: 24, borderRadius: 12, border: 0,
+                  cursor: pushBusy ? 'default' : 'pointer', opacity: pushBusy ? 0.6 : 1,
+                  background: pushEnabled ? '#2D6A4F' : 'var(--line-2)',
+                  position: 'relative', transition: 'background .2s', flexShrink: 0,
+                }}
+                aria-label={pushEnabled ? 'Disable push notifications' : 'Enable push notifications'}
+              >
+                <span style={{
+                  position: 'absolute', top: 2, left: pushEnabled ? 22 : 2,
+                  width: 20, height: 20, borderRadius: 10, background: '#fff',
+                  transition: 'left .2s', display: 'block',
+                }}/>
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
