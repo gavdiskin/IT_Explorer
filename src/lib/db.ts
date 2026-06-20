@@ -66,8 +66,11 @@ function rowToPlace(r: Record<string, any>): Place {
     area: r.area ?? '',
     city: r.city ?? '',
     station: r.nearest_station ?? undefined,
-    price: Math.min(4, Math.max(1, r.price_level ?? 2)),
-    rating: Number(r.rating ?? 0),
+    // 0 = "unknown" (e.g. a scraped place with no price/rating yet). The display
+    // components (PriceMark / StarRating) render a neutral placeholder for 0 rather
+    // than a fabricated "฿฿" / "0.0".
+    price: r.price_level != null ? Math.min(4, Math.max(1, r.price_level)) : 0,
+    rating: r.rating != null ? Number(r.rating) : 0,
     reviews: r.reviews_count ?? undefined,
     distance: r.distance ?? undefined,
     open: r.is_open ?? true,
@@ -104,7 +107,9 @@ export async function fetchPlaces(city?: string): Promise<Place[]> {
   let q = supabase.from('places').select('*').eq('status', 'approved')
   if (city) q = q.eq('city', city)
 
-  const { data, error } = await q.order('rating', { ascending: false })
+  // nullsFirst:false keeps unrated places (e.g. newly scraped) at the bottom —
+  // Postgres otherwise sorts NULLs first on DESC, floating placeholders to the top.
+  const { data, error } = await q.order('rating', { ascending: false, nullsFirst: false })
   if (error) { console.error('[db] fetchPlaces:', error.message); return [] }
   return (data ?? []).map(rowToPlace)
 }
@@ -122,7 +127,7 @@ export async function fetchPlacesByCategory(category: string, city: string, excl
   const { data, error } = await supabase
     .from('places').select('*')
     .eq('status', 'approved').eq('category_slug', category).eq('city', city).neq('slug', excludeSlug)
-    .order('rating', { ascending: false }).limit(3)
+    .order('rating', { ascending: false, nullsFirst: false }).limit(3)
   if (error) { console.error('[db] fetchPlacesByCategory:', error.message); return [] }
   return (data ?? []).map(rowToPlace)
 }
@@ -132,7 +137,7 @@ export async function fetchPlacesByStation(stationId: string): Promise<Place[]> 
   const { data, error } = await supabase
     .from('places').select('*')
     .eq('status', 'approved').eq('nearest_station', stationId)
-    .order('rating', { ascending: false })
+    .order('rating', { ascending: false, nullsFirst: false })
   if (error) { console.error('[db] fetchPlacesByStation:', error.message); return [] }
   return (data ?? []).map(rowToPlace)
 }

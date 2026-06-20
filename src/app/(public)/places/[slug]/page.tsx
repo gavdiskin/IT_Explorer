@@ -86,7 +86,7 @@ export default function PlacePage({ params }: { params: Promise<{ slug: string }
               <PriceMark n={place.price}/>
               <span className="dot-sep"/>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--muted)' }}>
-                <I.pin size={13}/> {place.area}, {place.city === 'phuket' ? 'Phuket' : 'Bangkok'}
+                <I.pin size={13}/> {place.area ? `${place.area}, ` : ''}{place.city === 'phuket' ? 'Phuket' : 'Bangkok'}
               </span>
               {place.station && <>
                 <span className="dot-sep"/>
@@ -119,8 +119,8 @@ export default function PlacePage({ params }: { params: Promise<{ slug: string }
       <section className="wrap" style={{ marginBottom: 36 }}>
         <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
           <Fact label="Status" value={<span className={place.open ? 'badge-open' : 'badge-closed'}>{place.open ? 'Open now' : 'Closed now'}</span>}/>
-          <Fact label="Hours" value={place.hours}/>
-          <Fact label="Area" value={place.area}/>
+          <Fact label="Hours" value={place.hours || '—'}/>
+          <Fact label="Area" value={place.area || '—'}/>
           <Fact label="Price" value={<PriceMark n={place.price}/>}/>
         </div>
       </section>
@@ -143,7 +143,7 @@ export default function PlacePage({ params }: { params: Promise<{ slug: string }
               ))}
             </ol>
 
-            {place.priceRange && (
+            {place.priceRange && Object.keys(place.priceRange).length > 0 && (
               <>
                 <h3 className="h3" style={{ marginTop: 32 }}>Typical prices</h3>
                 <div className="card card-flat" style={{ marginTop: 10, padding: 16 }}>

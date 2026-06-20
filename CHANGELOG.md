@@ -6,6 +6,22 @@ All significant changes to this project are documented here.
 
 ## [Unreleased] — active development on `claude/busy-rubin-5UsMp`
 
+### Place list ordering & thin-data display
+- **Fix: unrated places no longer dominate lists.** `fetchPlaces` /
+  `fetchPlacesByCategory` / `fetchPlacesByStation` ordered by `rating DESC`, and Postgres
+  sorts `NULL`s first on `DESC` — so places with no rating yet (e.g. the ~66 Bangkok places
+  imported from a Google Maps list with only name + coordinates) floated to the **top** of
+  every list/map. Added `nullsFirst: false` so unrated places sort to the bottom
+- **Fix: stop fabricating price/rating for thin data.** `rowToPlace` defaulted a missing
+  `price_level` to `2` (showing a made-up "฿฿") and rating to `0` (showing "0.0"). It now maps
+  missing values to `0`, and the display components render a neutral placeholder instead:
+  `PriceMark` shows "—" and `StarRating` shows "New" when no real value exists
+- **Fix: tidier detail pages for sparse places.** Place detail page no longer renders an empty
+  "Typical prices" card when `priceRange` is `{}`, drops the dangling comma before the city when
+  `area` is blank, and shows "—" for empty Hours/Area facts
+- Files: `src/lib/db.ts`, `src/components/ui/PriceMark.tsx`, `src/components/ui/StarRating.tsx`,
+  `src/app/(public)/places/[slug]/page.tsx`
+
 ### Database security hardening (audit 2026-06-16, fixes #1–#3)
 - **CRITICAL — privilege escalation closed**: dropped the `Users update own profile`
   RLS policy on `public.profiles`. It allowed any authenticated user to `UPDATE` their
