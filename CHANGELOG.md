@@ -4,7 +4,31 @@ All significant changes to this project are documented here.
 
 ---
 
-## [Unreleased] — active development on `claude/busy-rubin-5UsMp`
+## [Unreleased] — active development on `claude/zen-hamilton-1mhvfj`
+
+### Database security hardening (audit 2026-06-16, fixes #4–#5)
+- **MEDIUM — `submitted_by` attribution forgery closed (#5)**: the public INSERT
+  policies on `public.user_submissions` and `public.reports` used `WITH CHECK (true)`,
+  so any caller could set `submitted_by` to an arbitrary email — forging attribution,
+  polluting another user's "My submissions" view (the `Users read own submissions`
+  SELECT policy matches `submitted_by` = the caller's JWT email), and misdirecting the
+  admin push-notification flow. Both policies now require
+  `submitted_by IS NULL OR submitted_by = auth.jwt()->>'email'`: anonymous callers may
+  only submit with a NULL author, signed-in users only as themselves. The app already
+  fills `submitted_by` from the auth session (`AuthProvider` → `store.userEmail`), so
+  legitimate submissions are unaffected. Also clears the Supabase advisor
+  "RLS Policy Always True" warnings (lint 0024) on both tables. Verified against live
+  RLS via rolled-back transactions: anon/authenticated forging another email → blocked
+  (`new row violates row-level security policy`); anon-NULL and own-email inserts → allowed
+- **LOW — length CHECK constraints added (#4)**: `user_submissions` and `reports` accept
+  public inserts but the database had no length limits, so a scripted insert could store
+  arbitrarily large text and bloat the free-tier database (the UI's `MAXLEN` caps are
+  client-side only). Added `char_length` CHECK constraints mirroring `src/lib/validation.ts`
+  MAXLEN (name ≤120, description ≤1000, address ≤300, etc.; `category`/`city`/`contact` ≤80–120).
+  Verified existing rows fit before applying. Verified after: a 121-char value → rejected
+  (`violates check constraint`); a 120-char value → accepted
+- Migrations: `supabase/migrations/20260617072337_add_length_check_constraints_submissions_reports.sql`
+  and `…072346_restrict_submitted_by_to_self_on_insert.sql`
 
 ### Database security hardening (audit 2026-06-16, fixes #1–#3)
 - **CRITICAL — privilege escalation closed**: dropped the `Users update own profile`
