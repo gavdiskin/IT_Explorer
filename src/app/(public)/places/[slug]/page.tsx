@@ -126,7 +126,7 @@ export default function PlacePage({ params }: { params: Promise<{ slug: string }
       </section>
 
       <section className="wrap" style={{ marginBottom: 48 }}>
-        <div style={{ display: 'grid', gap: 24, gridTemplateColumns: 'minmax(0, 1fr) min(360px, 100%)' }}>
+        <div className="place-body">
           <div>
             <h3 className="h3">About</h3>
             <p style={{ marginTop: 8, fontSize: 15, lineHeight: 1.6 }}>{place.desc}</p>

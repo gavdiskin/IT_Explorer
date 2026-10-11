@@ -6,6 +6,21 @@ All significant changes to this project are documented here.
 
 ## [Unreleased] — active development on `claude/zen-hamilton-1mhvfj`
 
+### Fix: place detail page unreadable on phones
+- **Mobile layout bug (pre-existing):** the place detail page's lower section used an inline
+  grid of `minmax(0, 1fr) min(360px, 100%)`. On phones the sidebar column (map + report card)
+  took 100% of the width, squeezing the main column — **About, Practical tips and Typical
+  prices** — to **0px**, with the map drawn over it, and the page scrolled 6px sideways at 375px.
+  It never collapsed to a single column
+- Replaced the inline style with a mobile-first `.place-body` class in `globals.css` (same
+  pattern as `.map-split`): one column on phones (content first, then map & report), content +
+  360px sidebar from the 720px tablet breakpoint up. Desktop layout is unchanged
+- Verified in Chromium against the production build with no Supabase connection (static
+  fallback): 375px → content 339px wide, no horizontal overflow; 768px → 348px + 360px;
+  1280px → 860px + 360px (identical to before). A 375px sweep of 13 other key pages found no
+  other overflow
+- Files: `src/app/(public)/places/[slug]/page.tsx`, `src/app/globals.css`
+
 ### Database security hardening (audit 2026-06-16, fixes #4–#5)
 - **MEDIUM — `submitted_by` attribution forgery closed (#5)**: the public INSERT
   policies on `public.user_submissions` and `public.reports` used `WITH CHECK (true)`,
