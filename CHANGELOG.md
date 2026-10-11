@@ -14,6 +14,10 @@ All significant changes to this project are documented here.
 - **Remaining, accepted**: `postcss@8.4.31` is pinned *by Next.js itself* and only runs at
   build time on our own CSS; `braces` is in ESLint dev tooling. Both need a Next 16 major
   upgrade to clear (`npm audit fix --force`) — deferred as out of scope
+- **Node runtime floor documented**: the new `sharp@0.35.5` requires Node ≥20.9 (the old
+  0.34.5 allowed Node 18). Production on Vercel already runs Node 24.x, so it is unaffected;
+  added `.nvmrc` (24) and a README note for local setups. Deliberately no `engines` field,
+  because Vercel uses it to choose the production Node version
 - Verified: lint clean, build succeeds, production server smoke-tested at 375px with no
   Supabase env vars (static fallback) — home, map, guides, transport, emergency, sign-in and
   a place page render with no page errors and no horizontal overflow
