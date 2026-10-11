@@ -6,6 +6,18 @@ All significant changes to this project are documented here.
 
 ## [Unreleased] — active development on `claude/zen-hamilton-1mhvfj`
 
+### Dependency security update (audit 2026-10-11)
+- **CRITICAL — Next.js advisories patched**: `npm audit fix` bumped `next` 15.5.18 → 15.5.27
+  (same major/minor line, lockfile-only change), clearing the cluster of Next.js advisories
+  incl. Image Optimization API RCE (AVIF) and cache-confusion/cache-poisoning issues. Also
+  bumped transitive `sharp` (libvips CVEs), `nanoid`, and `source-map-js`
+- **Remaining, accepted**: `postcss@8.4.31` is pinned *by Next.js itself* and only runs at
+  build time on our own CSS; `braces` is in ESLint dev tooling. Both need a Next 16 major
+  upgrade to clear (`npm audit fix --force`) — deferred as out of scope
+- Verified: lint clean, build succeeds, production server smoke-tested at 375px with no
+  Supabase env vars (static fallback) — home, map, guides, transport, emergency, sign-in and
+  a place page render with no page errors and no horizontal overflow
+
 ### Database security hardening (audit 2026-06-16, fixes #4–#5)
 - **MEDIUM — `submitted_by` attribution forgery closed (#5)**: the public INSERT
   policies on `public.user_submissions` and `public.reports` used `WITH CHECK (true)`,
