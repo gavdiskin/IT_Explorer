@@ -267,6 +267,11 @@ body { padding-bottom: 0; }
 @media (max-width: 1099px) { .map-split { grid-template-columns: 340px 1fr; } }
 @media (max-width: 719px) { .map-split { grid-template-columns: 1fr; } .map-split__list { display: none; } }
 
+/* Place detail body: one column on phones (About/tips/prices, then map & report),
+   content + 360px sidebar from tablet up. */
+.place-body { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 720px) { .place-body { grid-template-columns: minmax(0, 1fr) 360px; } }
+
 .map-sheet {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 7;
   background: var(--bg-card); border-radius: 22px 22px 0 0;
