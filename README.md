@@ -46,6 +46,8 @@ Without them the app still runs on static seed data (no auth, no persistence).
 
 ## Local development
 
+Requires **Node.js 20.9 or newer** (`sharp`, used by `next/image`, dropped Node 18). Production on Vercel runs Node 24.x; `.nvmrc` pins the same major for `nvm use`.
+
 ```bash
 npm install
 npm run dev      # http://localhost:3000

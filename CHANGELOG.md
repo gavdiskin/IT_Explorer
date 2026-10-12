@@ -19,7 +19,26 @@ All significant changes to this project are documented here.
   fallback): 375px → content 339px wide, no horizontal overflow; 768px → 348px + 360px;
   1280px → 860px + 360px (identical to before). A 375px sweep of 13 other key pages found no
   other overflow
+- Re-measured after merging the dependency update below (Next.js 15.5.27): without this fix,
+  place pages (`or-tor-kor`, `wat-arun`) still render 381px wide at 375px with a 0px About
+  column, so that entry's "no horizontal overflow" smoke test did not cover this case
 - Files: `src/app/(public)/places/[slug]/page.tsx`, `src/app/globals.css`
+
+### Dependency security update (audit 2026-10-11)
+- **CRITICAL — Next.js advisories patched**: `npm audit fix` bumped `next` 15.5.18 → 15.5.27
+  (same major/minor line, lockfile-only change), clearing the cluster of Next.js advisories
+  incl. Image Optimization API RCE (AVIF) and cache-confusion/cache-poisoning issues. Also
+  bumped transitive `sharp` (libvips CVEs), `nanoid`, and `source-map-js`
+- **Remaining, accepted**: `postcss@8.4.31` is pinned *by Next.js itself* and only runs at
+  build time on our own CSS; `braces` is in ESLint dev tooling. Both need a Next 16 major
+  upgrade to clear (`npm audit fix --force`) — deferred as out of scope
+- **Node runtime floor documented**: the new `sharp@0.35.5` requires Node ≥20.9 (the old
+  0.34.5 allowed Node 18). Production on Vercel already runs Node 24.x, so it is unaffected;
+  added `.nvmrc` (24) and a README note for local setups. Deliberately no `engines` field,
+  because Vercel uses it to choose the production Node version
+- Verified: lint clean, build succeeds, production server smoke-tested at 375px with no
+  Supabase env vars (static fallback) — home, map, guides, transport, emergency, sign-in and
+  a place page render with no page errors and no horizontal overflow
 
 ### Database security hardening (audit 2026-06-16, fixes #4–#5)
 - **MEDIUM — `submitted_by` attribution forgery closed (#5)**: the public INSERT
