@@ -59,13 +59,13 @@ services:
     volumes:
       - ./db/data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"            # this laptop only — not other devices on the wifi
 
   directus:
     image: directus/directus:latest
     restart: unless-stopped
     ports:
-      - "8055:8055"
+      - "127.0.0.1:8055:8055"            # this laptop only — see the note below
     volumes:
       - ./cms/uploads:/directus/uploads
       - ./cms/extensions:/directus/extensions
@@ -84,7 +84,13 @@ services:
       - database
 ```
 
-Create **`.env`** in the project root (and add `.env` to `.gitignore`):
+> 🔒 **Why `127.0.0.1:`?** A plain `"8055:8055"` makes Docker open the port to **every device on
+> the same network** — so on café or coworking wifi, anyone nearby could reach your CMS admin
+> and database. Prefixing `127.0.0.1:` keeps them reachable from this laptop only. Directus still
+> talks to Postgres over Docker's internal network (`DB_HOST: database`), so nothing breaks.
+
+Create **`.env`** in the project root (and add `.env` to `.gitignore`). Replace every
+`change-me` value with a real random secret — generate each one with `openssl rand -base64 32`:
 
 ```bash
 DB_PASSWORD=change-me-strong-password
@@ -129,7 +135,12 @@ npx expo start      # press 'a' = Android emulator, 'i' = iOS simulator (Mac onl
 - **Android emulator** runs fully offline on any OS (needs Android Studio installed).
 - **iOS simulator** needs a **Mac + Xcode**.
 - **Physical phone:** install **Expo Go** and scan the QR — phone + laptop on the same wifi
-  (local network, not the internet).
+  (local network, not the internet). Because the CMS is bound to `127.0.0.1`, the app on a real
+  phone can't reach it. When you need that, and **only on a trusted home network with real
+  secrets in `.env`**, temporarily change the Directus port to `"8055:8055"`, point the app at
+  your laptop's network IP (e.g. `http://192.168.1.20:8055`), and switch back afterwards.
+  (No change is needed for the simulators: the iOS simulator reaches the CMS at
+  `http://localhost:8055`, and the Android emulator reaches your laptop at `http://10.0.2.2:8055`.)
 
 ## 5. Import the existing data (carry over the ~137 places)
 
